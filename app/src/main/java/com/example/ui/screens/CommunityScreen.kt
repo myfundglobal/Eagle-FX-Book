@@ -152,7 +152,7 @@ fun CommunityScreen(
             FloatingActionButton(
                 onClick = { showComposer = true },
                 containerColor = GoldAccent,
-                contentColor = ObsidianBlack,
+                contentColor = TextPrimary,
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .padding(end = 18.dp, bottom = 92.dp)
@@ -430,7 +430,7 @@ private fun AdminPostComposer(
                     onPublish(title, message, pairTag.ifBlank { "FX" }, bias, chartKey, dateLabelDefault)
                 },
                 enabled = !isBusy,
-                colors = ButtonDefaults.buttonColors(containerColor = GoldAccent, contentColor = ObsidianBlack),
+                colors = ButtonDefaults.buttonColors(containerColor = GoldAccent, contentColor = TextPrimary),
                 modifier = Modifier.weight(1.4f)
             ) {
                 Text("Publish Setup", fontWeight = FontWeight.Bold)

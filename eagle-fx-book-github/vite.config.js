@@ -7,8 +7,10 @@ const pkg = JSON.parse(
   readFileSync(new URL("./package.json", import.meta.url), "utf-8")
 );
 
+const base = process.env.VITE_BASE || "/";
+
 export default defineConfig({
-  base: "/Eagle-FX-Book/",
+  base,
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version)
   },
@@ -30,8 +32,8 @@ export default defineConfig({
         background_color: "#050505",
         display: "standalone",
         orientation: "portrait",
-        start_url: "/Eagle-FX-Book/",
-        scope: "/Eagle-FX-Book/",
+        start_url: base,
+        scope: base,
         icons: [
           {
             src: "pwa-192x192.png",

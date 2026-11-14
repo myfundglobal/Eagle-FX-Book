@@ -348,7 +348,7 @@ private fun AdminOrdersTab(
                                 Button(
                                     onClick = { onApprove(order, "Payment verified & activated") },
                                     enabled = !isBusy,
-                                    colors = ButtonDefaults.buttonColors(containerColor = GoldAccent, contentColor = ObsidianBlack),
+                                    colors = ButtonDefaults.buttonColors(containerColor = GoldAccent, contentColor = TextPrimary),
                                     modifier = Modifier
                                         .weight(1.3f)
                                         .testTag("admin_approve_order_${order.id}")
@@ -384,7 +384,7 @@ private fun AdminOrdersTab(
                     Button(
                         onClick = { proofPreview = null },
                         modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColors(containerColor = GoldAccent, contentColor = ObsidianBlack)
+                        colors = ButtonDefaults.buttonColors(containerColor = GoldAccent, contentColor = TextPrimary)
                     ) {
                         Text("Close", fontWeight = FontWeight.Bold)
                     }
@@ -471,7 +471,7 @@ private fun AdminUsersTab(
                                         onToggleUserBlocked(user, shouldBlock)
                                     },
                                     colors = SwitchDefaults.colors(
-                                        checkedThumbColor = ObsidianBlack,
+                                        checkedThumbColor = TextPrimary,
                                         checkedTrackColor = LossCrimson
                                     ),
                                     modifier = Modifier.testTag("block_user_switch_${user.userId}")
@@ -628,7 +628,7 @@ private fun AdminPlansTab(
                                 }
                             },
                             enabled = !isBusy,
-                            colors = ButtonDefaults.buttonColors(containerColor = GoldAccent, contentColor = ObsidianBlack),
+                            colors = ButtonDefaults.buttonColors(containerColor = GoldAccent, contentColor = TextPrimary),
                             modifier = Modifier
                                 .weight(1.4f)
                                 .testTag("save_plan_button")
@@ -811,7 +811,7 @@ private fun AdminPaymentSettingsTab(
                             onSave(upiId, upiQrBase64, cryptoWallet, cryptoNetwork)
                         },
                         enabled = !isBusy,
-                        colors = ButtonDefaults.buttonColors(containerColor = GoldAccent, contentColor = ObsidianBlack),
+                        colors = ButtonDefaults.buttonColors(containerColor = GoldAccent, contentColor = TextPrimary),
                         modifier = Modifier
                             .fillMaxWidth()
                             .testTag("save_admin_settings_btn")
@@ -994,7 +994,7 @@ private fun AdminAddProductTab(
                             fileLink = ""
                         },
                         enabled = !isBusy,
-                        colors = ButtonDefaults.buttonColors(containerColor = GoldAccent, contentColor = ObsidianBlack),
+                        colors = ButtonDefaults.buttonColors(containerColor = GoldAccent, contentColor = TextPrimary),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text("Publish Product to Store", fontWeight = FontWeight.Bold)
@@ -1082,7 +1082,7 @@ private fun AdminNewsAndSyncTab(
                             }
                         },
                         enabled = !isBusy,
-                        colors = ButtonDefaults.buttonColors(containerColor = GoldAccent, contentColor = ObsidianBlack),
+                        colors = ButtonDefaults.buttonColors(containerColor = GoldAccent, contentColor = TextPrimary),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text("Publish News Event", fontWeight = FontWeight.Bold)

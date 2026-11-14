@@ -351,7 +351,7 @@ fun ProfileSetupOrEditDialog(
                             )
                         },
                         enabled = !isBusy,
-                        colors = ButtonDefaults.buttonColors(containerColor = GoldAccent, contentColor = ObsidianBlack),
+                        colors = ButtonDefaults.buttonColors(containerColor = GoldAccent, contentColor = TextPrimary),
                         modifier = Modifier
                             .weight(1.4f)
                             .testTag("save_profile_button")

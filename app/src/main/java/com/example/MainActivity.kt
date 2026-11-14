@@ -10,6 +10,11 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -55,6 +60,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationRail
 import androidx.compose.material3.NavigationRailItem
@@ -76,12 +82,18 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.credentials.CredentialManager
 import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
@@ -156,18 +168,126 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun EagleFxBookRoot(auth: FirebaseAuth = Firebase.auth) {
     val currentUser by auth.authStateFlow().collectAsStateWithLifecycle(initialValue = auth.currentUser)
-    val user = currentUser
+    var splashDone by remember { mutableStateOf(false) }
 
-    if (user == null) {
-        AuthScreen(onAuthSuccess = {})
-    } else {
-        val uid = user.uid
-        key(uid) {
-            AuthenticatedTerminalApp(
-                currentUserId = uid,
-                userDisplayName = user.displayName ?: user.email?.substringBefore("@") ?: "Trader",
-                userEmail = user.email ?: "",
-                isEmailVerified = user.isEmailVerified
+    Box(modifier = Modifier.fillMaxSize()) {
+        val user = currentUser
+        if (user == null) {
+            AuthScreen(onAuthSuccess = {})
+        } else {
+            val uid = user.uid
+            key(uid) {
+                AuthenticatedTerminalApp(
+                    currentUserId = uid,
+                    userDisplayName = user.displayName ?: user.email?.substringBefore("@") ?: "Trader",
+                    userEmail = user.email ?: "",
+                    isEmailVerified = user.isEmailVerified
+                )
+            }
+        }
+
+        AnimatedVisibility(
+            visible = !splashDone,
+            exit = fadeOut(animationSpec = tween(durationMillis = 320))
+        ) {
+            EagleSplashScreen(onComplete = { splashDone = true })
+        }
+    }
+}
+
+@Composable
+private fun EagleSplashScreen(onComplete: () -> Unit) {
+    val progress = remember { Animatable(0f) }
+
+    LaunchedEffect(Unit) {
+        progress.animateTo(
+            targetValue = 1f,
+            animationSpec = tween(durationMillis = 1750, easing = LinearEasing)
+        )
+        onComplete()
+    }
+
+    val pct = (progress.value * 100).toInt().coerceIn(0, 100)
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(ObsidianBlack)
+            .padding(32.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(108.dp)
+                    .shadow(
+                        elevation = 28.dp,
+                        shape = RoundedCornerShape(26.dp),
+                        spotColor = GoldAccent.copy(alpha = 0.45f)
+                    )
+                    .clip(RoundedCornerShape(26.dp))
+                    .border(1.dp, GoldAccent.copy(alpha = 0.45f), RoundedCornerShape(26.dp))
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.app_icon_emblem_1794684148106),
+                    contentDescription = "Eagle FX Book",
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+            }
+
+            Text(
+                text = "EAGLE FX BOOK",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.ExtraBold,
+                letterSpacing = 2.4.sp,
+                color = TextPrimary,
+                textAlign = TextAlign.Center
+            )
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth(0.78f)
+                    .padding(top = 6.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                LinearProgressIndicator(
+                    progress = { progress.value },
+                    color = GoldAccent,
+                    trackColor = SlateElevated,
+                    strokeCap = StrokeCap.Round,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(5.dp)
+                        .clip(RoundedCornerShape(999.dp))
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = "Initializing terminal...",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = TextMuted
+                    )
+                    Text(
+                        text = "$pct%",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = GoldAccent
+                    )
+                }
+            }
+
+            Text(
+                text = "Trade. Journal. Improve.",
+                style = MaterialTheme.typography.bodySmall,
+                color = TextMuted,
+                letterSpacing = 0.8.sp
             )
         }
     }
@@ -303,7 +423,7 @@ private fun AuthenticatedTerminalApp(
                     )
                     Button(
                         onClick = { signOutUser(credentialManager, scope) },
-                        colors = ButtonDefaults.buttonColors(containerColor = GoldAccent, contentColor = ObsidianBlack)
+                        colors = ButtonDefaults.buttonColors(containerColor = GoldAccent, contentColor = TextPrimary)
                     ) {
                         Text("Sign Out", fontWeight = FontWeight.Bold)
                     }
@@ -418,7 +538,7 @@ private fun AuthenticatedTerminalApp(
                                     },
                                     label = { Text(tab.label, style = MaterialTheme.typography.labelSmall) },
                                     colors = NavigationRailItemDefaults.colors(
-                                        selectedIconColor = ObsidianBlack,
+                                        selectedIconColor = TextPrimary,
                                         selectedTextColor = GoldAccent,
                                         indicatorColor = GoldAccent,
                                         unselectedIconColor = TextMuted,
@@ -648,14 +768,14 @@ private fun TerminalTopBar(
                                 Icon(
                                     imageVector = Icons.Filled.AdminPanelSettings,
                                     contentDescription = "Admin Panel",
-                                    tint = ObsidianBlack,
+                                    tint = TextPrimary,
                                     modifier = Modifier.size(18.dp)
                                 )
                             }
                             Text(
                                 text = "Admin",
                                 style = MaterialTheme.typography.labelLarge,
-                                color = ObsidianBlack,
+                                color = TextPrimary,
                                 fontWeight = FontWeight.Bold
                             )
                         }
@@ -744,7 +864,7 @@ private fun EmailConfirmationReceiptDialog(
                     }
                     Button(
                         onClick = onDismiss,
-                        colors = ButtonDefaults.buttonColors(containerColor = GoldAccent, contentColor = ObsidianBlack),
+                        colors = ButtonDefaults.buttonColors(containerColor = GoldAccent, contentColor = TextPrimary),
                         modifier = Modifier.weight(1f)
                     ) {
                         Text("Done", fontWeight = FontWeight.Bold)

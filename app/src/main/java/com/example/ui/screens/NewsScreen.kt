@@ -179,7 +179,7 @@ fun NewsScreen(
                             onClick = onRequestNotificationAlerts,
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = if (hasNotificationPermission) GoldAccent.copy(alpha = 0.2f) else GoldAccent,
-                                contentColor = if (hasNotificationPermission) GoldAccent else ObsidianBlack
+                                contentColor = if (hasNotificationPermission) GoldAccent else TextPrimary
                             ),
                             shape = RoundedCornerShape(10.dp),
                             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)

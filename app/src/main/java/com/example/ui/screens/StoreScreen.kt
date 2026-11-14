@@ -427,7 +427,7 @@ private fun SubscriptionPlanCard(
                 else -> {
                     Button(
                         onClick = onSubscribeClick,
-                        colors = ButtonDefaults.buttonColors(containerColor = GoldAccent, contentColor = ObsidianBlack),
+                        colors = ButtonDefaults.buttonColors(containerColor = GoldAccent, contentColor = TextPrimary),
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier
                             .fillMaxWidth()
@@ -627,7 +627,7 @@ private fun ProductCatalogCard(
                             }
                             Button(
                                 onClick = onBuyClick,
-                                colors = ButtonDefaults.buttonColors(containerColor = GoldAccent, contentColor = ObsidianBlack),
+                                colors = ButtonDefaults.buttonColors(containerColor = GoldAccent, contentColor = TextPrimary),
                                 shape = RoundedCornerShape(10.dp),
                                 modifier = Modifier.testTag("buy_product_button_${product.id}")
                             ) {
@@ -839,7 +839,7 @@ private fun ExternalPaymentCheckoutSheet(
                     onSubmit(method, transactionId.trim(), screenshotBase64)
                 },
                 enabled = !isBusy && adminSettings != null,
-                colors = ButtonDefaults.buttonColors(containerColor = GoldAccent, contentColor = ObsidianBlack),
+                colors = ButtonDefaults.buttonColors(containerColor = GoldAccent, contentColor = TextPrimary),
                 modifier = Modifier
                     .weight(1.4f)
                     .testTag("submit_order_button")

@@ -63,9 +63,9 @@ fun GlassCard(
 ) {
     val fillBrush = Brush.verticalGradient(
         colors = if (elevated) {
-            listOf(GlassElevated, GlassDark)
+            listOf(Color(0xF016161B), Color(0xEB0D0D10))
         } else {
-            listOf(Color(0xC2171E2C), Color(0xAD0D111A))
+            listOf(Color(0xEB121216), Color(0xE60D0D10))
         }
     )
     val borderBrush = if (accentBorderColor != null) {
@@ -150,7 +150,7 @@ fun FloatingGoldPillNavBar(
                         label = "navPillBg"
                     )
                     val contentTint by animateColorAsState(
-                        targetValue = if (selected) ObsidianBlack else TextMuted,
+                        targetValue = if (selected) Color.White else TextMuted,
                         animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
                         label = "navPillTint"
                     )
@@ -183,7 +183,7 @@ fun FloatingGoldPillNavBar(
                                 text = item.label,
                                 style = MaterialTheme.typography.labelMedium,
                                 fontWeight = FontWeight.Bold,
-                                color = ObsidianBlack,
+                                color = Color.White,
                                 maxLines = 1
                             )
                         }

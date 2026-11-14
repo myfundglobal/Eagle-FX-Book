@@ -266,7 +266,7 @@ fun JournalScreen(
         FloatingActionButton(
             onClick = onOpenLogSheet,
             containerColor = GoldAccent,
-            contentColor = ObsidianBlack,
+            contentColor = TextPrimary,
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(end = 18.dp, bottom = 92.dp)
@@ -316,7 +316,7 @@ fun JournalScreen(
                     Button(
                         onClick = { previewScreenshotBase64 = null },
                         modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColors(containerColor = GoldAccent, contentColor = ObsidianBlack)
+                        colors = ButtonDefaults.buttonColors(containerColor = GoldAccent, contentColor = TextPrimary)
                     ) {
                         Text("Close", fontWeight = FontWeight.Bold)
                     }
@@ -721,7 +721,7 @@ private fun LogTradeForm(
                     )
                 },
                 enabled = !isBusy,
-                colors = ButtonDefaults.buttonColors(containerColor = GoldAccent, contentColor = ObsidianBlack),
+                colors = ButtonDefaults.buttonColors(containerColor = GoldAccent, contentColor = TextPrimary),
                 modifier = Modifier
                     .weight(1.4f)
                     .testTag("submit_trade_button")

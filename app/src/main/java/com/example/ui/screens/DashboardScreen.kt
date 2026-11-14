@@ -169,7 +169,7 @@ fun DashboardScreen(
                             modifier = Modifier.testTag("dashboard_log_trade_btn"),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = GoldAccent,
-                                contentColor = ObsidianBlack
+                                contentColor = TextPrimary
                             ),
                             shape = RoundedCornerShape(12.dp),
                             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp)

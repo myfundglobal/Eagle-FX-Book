@@ -14,7 +14,7 @@ import androidx.core.view.WindowCompat
 
 private val EagleFxDarkColorScheme = darkColorScheme(
     primary = GoldAccent,
-    onPrimary = ObsidianBlack,
+    onPrimary = TextPrimary,
     primaryContainer = GoldGlow,
     onPrimaryContainer = GoldAccent,
     secondary = NeonProfit,
@@ -22,7 +22,7 @@ private val EagleFxDarkColorScheme = darkColorScheme(
     secondaryContainer = NeonProfitGlow,
     onSecondaryContainer = NeonProfit,
     tertiary = ElectricCyan,
-    onTertiary = ObsidianBlack,
+    onTertiary = TextPrimary,
     tertiaryContainer = ElectricCyanGlow,
     onTertiaryContainer = ElectricCyan,
     error = LossCrimson,
@@ -40,7 +40,7 @@ private val EagleFxDarkColorScheme = darkColorScheme(
     surfaceContainer = SlateElevated,
     surfaceContainerHigh = SlateBright,
     outline = HairlineBorder,
-    outlineVariant = Color(0xFF1B2332)
+    outlineVariant = HairlineBorder
 )
 
 private val EagleFxShapes = Shapes(
