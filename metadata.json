@@ -1,0 +1,8 @@
+{
+  "name": "Eagle FX Book",
+  "description": "Deep dark-mode Forex & Crypto trading journal, live economic calendar, glassmorphic community setups, subscription plans, and software store with admin control.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

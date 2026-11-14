@@ -1,0 +1,266 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Authenticated Eagle FX Book trader or administrator profile.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Firebase Auth UID" },
+        "name": { "type": "string", "description": "Full display name" },
+        "firstName": { "type": "string" },
+        "surname": { "type": "string" },
+        "countryCode": { "type": "string" },
+        "phoneNumber": { "type": "string" },
+        "email": { "type": "string", "description": "Verified account email" },
+        "profilePictureBase64": { "type": "string" },
+        "role": { "type": "string", "enum": ["Admin", "User"] },
+        "accessStatus": { "type": "string", "enum": ["Active", "Blocked", "Suspended"] },
+        "activePlanName": { "type": "string" },
+        "subscriptionStatus": { "type": "string", "enum": ["None", "Active", "Lifetime"] },
+        "subscriptionExpiresAtMillis": { "type": "integer" },
+        "profileCompleted": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "userId", "name", "firstName", "surname", "countryCode", "phoneNumber",
+        "email", "profilePictureBase64", "role", "accessStatus", "activePlanName",
+        "subscriptionStatus", "subscriptionExpiresAtMillis", "profileCompleted",
+        "createdAt", "updatedAt"
+      ]
+    },
+    "Trade": {
+      "title": "Trade",
+      "description": "Private Forex/Crypto trade journal entry owned by a single user.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "date": { "type": "string" },
+        "monthKey": { "type": "string" },
+        "pair": { "type": "string" },
+        "side": { "type": "string", "enum": ["Buy", "Sell"] },
+        "lotSize": { "type": "number" },
+        "entryPrice": { "type": "number" },
+        "exitPrice": { "type": "number" },
+        "stopLoss": { "type": "number" },
+        "takeProfit": { "type": "number" },
+        "riskReward": { "type": "number" },
+        "strategyTags": { "type": "array" },
+        "pnl": { "type": "number" },
+        "notes": { "type": "string" },
+        "screenshotBase64": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "userId", "date", "monthKey", "pair", "side", "lotSize", "entryPrice",
+        "exitPrice", "stopLoss", "takeProfit", "riskReward", "strategyTags",
+        "pnl", "notes", "screenshotBase64", "createdAt", "updatedAt"
+      ]
+    },
+    "SubscriptionPlan": {
+      "title": "SubscriptionPlan",
+      "description": "Dynamic Eagle FX Book subscription plan managed by Admin.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "durationLabel": { "type": "string" },
+        "durationDays": { "type": "integer" },
+        "priceUsd": { "type": "number" },
+        "priceInr": { "type": "number" },
+        "features": { "type": "array" },
+        "badgeText": { "type": "string" },
+        "isActive": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "name", "durationLabel", "durationDays", "priceUsd", "priceInr",
+        "features", "badgeText", "isActive", "createdAt", "updatedAt"
+      ]
+    },
+    "UnlockedProduct": {
+      "title": "UnlockedProduct",
+      "description": "Granted download access written by Admin upon order approval.",
+      "type": "object",
+      "properties": {
+        "productId": { "type": "string" },
+        "orderId": { "type": "string" },
+        "productName": { "type": "string" },
+        "fileLink": { "type": "string" },
+        "licenseKey": { "type": "string" },
+        "unlockedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["productId", "orderId", "productName", "fileLink", "licenseKey", "unlockedAt"]
+    },
+    "CommunityPost": {
+      "title": "CommunityPost",
+      "description": "Admin-authored trade setup or market update.",
+      "type": "object",
+      "properties": {
+        "authorId": { "type": "string" },
+        "authorName": { "type": "string" },
+        "dateLabel": { "type": "string" },
+        "title": { "type": "string" },
+        "adminMessage": { "type": "string" },
+        "pairTag": { "type": "string" },
+        "bias": { "type": "string", "enum": ["Bullish", "Bearish", "Neutral"] },
+        "chartImageKey": { "type": "string" },
+        "likesCount": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "authorId", "authorName", "dateLabel", "title", "adminMessage",
+        "pairTag", "bias", "chartImageKey", "likesCount", "createdAt", "updatedAt"
+      ]
+    },
+    "PostLike": {
+      "title": "PostLike",
+      "description": "Per-user like marker for a community post.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "createdAt"]
+    },
+    "NewsEvent": {
+      "title": "NewsEvent",
+      "description": "Macro economic news calendar event.",
+      "type": "object",
+      "properties": {
+        "date": { "type": "string" },
+        "time": { "type": "string" },
+        "timestampMillis": { "type": "integer" },
+        "currency": { "type": "string" },
+        "event": { "type": "string" },
+        "impact": { "type": "string", "enum": ["High", "Medium", "Low"] },
+        "forecast": { "type": "string" },
+        "previous": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["date", "time", "timestampMillis", "currency", "event", "impact", "forecast", "previous", "createdAt", "updatedAt"]
+    },
+    "Product": {
+      "title": "Product",
+      "description": "Public catalog listing for Algo Bots and Trading Software.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "category": { "type": "string", "enum": ["Algo Bot", "Trading Software", "Indicator"] },
+        "description": { "type": "string" },
+        "version": { "type": "string" },
+        "priceUsd": { "type": "number" },
+        "priceInr": { "type": "number" },
+        "coverImageKey": { "type": "string" },
+        "features": { "type": "array" },
+        "isActive": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "category", "description", "version", "priceUsd", "priceInr", "coverImageKey", "features", "isActive", "createdAt", "updatedAt"]
+    },
+    "ProductDeliverable": {
+      "title": "ProductDeliverable",
+      "description": "Admin-only protected download URL for a store product.",
+      "type": "object",
+      "properties": {
+        "productId": { "type": "string" },
+        "fileLink": { "type": "string" },
+        "licenseInstructions": { "type": "string" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["productId", "fileLink", "licenseInstructions", "updatedAt"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "User payment submission for products or FX Book subscription plans.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "userEmail": { "type": "string" },
+        "userName": { "type": "string" },
+        "productId": { "type": "string" },
+        "productName": { "type": "string" },
+        "itemType": { "type": "string", "enum": ["Product", "Plan"] },
+        "durationDays": { "type": "integer" },
+        "amountLabel": { "type": "string" },
+        "paymentMethod": { "type": "string", "enum": ["UPI", "Crypto"] },
+        "transactionId": { "type": "string" },
+        "paymentScreenshotBase64": { "type": "string" },
+        "status": { "type": "string", "enum": ["Pending", "Approved", "Rejected"] },
+        "adminNote": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "userId", "userEmail", "userName", "productId", "productName",
+        "itemType", "durationDays", "amountLabel", "paymentMethod",
+        "transactionId", "paymentScreenshotBase64", "status", "adminNote",
+        "createdAt", "updatedAt"
+      ]
+    },
+    "AdminSettings": {
+      "title": "AdminSettings",
+      "description": "Live UPI and Crypto payment details managed by Admin.",
+      "type": "object",
+      "properties": {
+        "currentUpiId": { "type": "string" },
+        "currentUpiQrImageBase64": { "type": "string" },
+        "currentCryptoWalletAddress": { "type": "string" },
+        "cryptoNetwork": { "type": "string" },
+        "updatedBy": { "type": "string" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["currentUpiId", "currentUpiQrImageBase64", "currentCryptoWalletAddress", "cryptoNetwork", "updatedBy", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "User profile, phone verification details, DP, block status, and subscription state"
+    },
+    "/users/{userId}/trades/{tradeId}": {
+      "schema": { "$ref": "#/entities/Trade" },
+      "description": "User-private trade journal entries"
+    },
+    "/users/{userId}/unlocked_products/{productId}": {
+      "schema": { "$ref": "#/entities/UnlockedProduct" },
+      "description": "Approved download links or plan activations unlocked for buyer"
+    },
+    "/subscription_plans/{planId}": {
+      "schema": { "$ref": "#/entities/SubscriptionPlan" },
+      "description": "Dynamic FX Book subscription plans managed exclusively by Admin"
+    },
+    "/community_posts/{postId}": {
+      "schema": { "$ref": "#/entities/CommunityPost" },
+      "description": "Admin-only community market posts"
+    },
+    "/community_posts/{postId}/likes/{userId}": {
+      "schema": { "$ref": "#/entities/PostLike" },
+      "description": "Per-user like marker"
+    },
+    "/news_calendar/{newsId}": {
+      "schema": { "$ref": "#/entities/NewsEvent" },
+      "description": "Economic news calendar"
+    },
+    "/products/{productId}": {
+      "schema": { "$ref": "#/entities/Product" },
+      "description": "Public store product listings"
+    },
+    "/product_deliverables/{productId}": {
+      "schema": { "$ref": "#/entities/ProductDeliverable" },
+      "description": "Protected file download links visible only to Admin"
+    },
+    "/orders/{orderId}": {
+      "schema": { "$ref": "#/entities/Order" },
+      "description": "User orders and payment verification proofs"
+    },
+    "/admin_settings/{settingId}": {
+      "schema": { "$ref": "#/entities/AdminSettings" },
+      "description": "Live UPI QR/ID and Crypto wallet payment settings"
+    }
+  }
+}

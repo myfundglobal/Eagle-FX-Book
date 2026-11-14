@@ -1,0 +1,9 @@
+{
+  "appId": "com.eaglefxbook.app",
+  "appName": "Eagle FX Book",
+  "webDir": "dist",
+  "server": {
+    "url": "https://myfundglobal.github.io/Eagle-FX-Book/",
+    "androidScheme": "https"
+  }
+}
