@@ -318,31 +318,33 @@ test("Subscription plans & Store deliverables: Admin manages plans; Orders unloc
   await assertSucceeds(aliceDb.collection("subscription_plans").get());
 });
 
-test("Web profile: 8-field user creation + merge profile update succeed while admin fields remain protected", async () => {
+test("Trader Profile: owner updating own profile passes (even on 8-field/legacy docs); protected fields & other users fail", async () => {
   const webUid = "web_trader_1";
   const webDb = testEnv.authenticatedContext(webUid, {
     email: "webtrader@example.com",
     email_verified: true,
   }).firestore();
+  const bobDb = testEnv.authenticatedContext(BOB_UID, {
+    email: "bob@example.com",
+    email_verified: true,
+  }).firestore();
+  const admDb = adminCtx().firestore();
 
-  // Initial create with exact 8 Web fields + serverTs
+  // Initial create with exact 8 signup fields (no firstName/surname/phone/countryCode/photo yet)
   await assertSucceeds(
-    webDb.collection("users").doc(webUid).set(
-      {
-        uid: webUid,
-        role: "User",
-        accessStatus: "Active",
-        subscriptionStatus: "None",
-        activePlanName: "Free Tier",
-        name: "Web Trader",
-        email: "webtrader@example.com",
-        createdAt: serverTs(),
-      },
-      { merge: true }
-    )
+    webDb.collection("users").doc(webUid).set({
+      uid: webUid,
+      role: "User",
+      accessStatus: "Active",
+      subscriptionStatus: "None",
+      activePlanName: "Free Tier",
+      name: "Web Trader",
+      email: "webtrader@example.com",
+      createdAt: serverTs(),
+    })
   );
 
-  // Merge update of Trader Profile fields only
+  // Owner updates own profile using only allowed profile fields via merge
   await assertSucceeds(
     webDb.collection("users").doc(webUid).set(
       {
@@ -351,6 +353,96 @@ test("Web profile: 8-field user creation + merge profile update succeed while ad
         name: "Aarav Sharma",
         countryCode: "+91",
         phoneNumber: "9876543210",
+        profilePictureBase64: "data:image/jpeg;base64,/9j/4AAQ",
+        profileCompleted: true,
+        updatedAt: serverTs(),
+      },
+      { merge: true }
+    )
+  );
+
+  // Also test phone + photoURL fields directly
+  await assertSucceeds(
+    webDb.collection("users").doc(webUid).update({
+      phone: "9876543210",
+      photoURL: "https://example.com/avatar.png",
+      updatedAt: serverTs(),
+    })
+  );
+
+  // Invalid phone (non-digits) or >100 chars name fails
+  await assertFails(
+    webDb.collection("users").doc(webUid).update({
+      phone: "abc-123",
+      updatedAt: serverTs(),
+    })
+  );
+  await assertFails(
+    webDb.collection("users").doc(webUid).update({
+      firstName: "A".repeat(101),
+      updatedAt: serverTs(),
+    })
+  );
+
+  // Owner changing role or subscriptionStatus or protected fields fails
+  for (const forbidden of [
+    { role: "Admin" },
+    { subscriptionStatus: "Lifetime" },
+    { subscriptionStatus: "Active" },
+    { activePlanName: "VIP" },
+    { accessStatus: "Blocked" },
+    { uid: "hijack" },
+    { email: "hijack@example.com" },
+    { createdAt: serverTs() },
+    { planStartedAt: serverTs() },
+    { planExpiresAt: null },
+    { chatMuted: true },
+  ]) {
+    await assertFails(
+      webDb.collection("users").doc(webUid).set(
+        {
+          ...forbidden,
+          updatedAt: serverTs(),
+        },
+        { merge: true }
+      )
+    );
+  }
+
+  // Another user updating web_trader_1's profile fails
+  await assertFails(
+    bobDb.collection("users").doc(webUid).set(
+      {
+        firstName: "Hacked",
+        updatedAt: serverTs(),
+      },
+      { merge: true }
+    )
+  );
+
+  // Legacy document missing activePlanName & accessStatus also passes owner profile update
+  const legacyUid = "legacy_trader_1";
+  await testEnv.withSecurityRulesDisabled(async (ctx) => {
+    await ctx.firestore().collection("users").doc(legacyUid).set({
+      uid: legacyUid,
+      role: "User",
+      name: "Legacy Trader",
+      email: "legacy@example.com",
+      createdAt: serverTs(),
+    });
+  });
+  const legacyDb = testEnv.authenticatedContext(legacyUid, {
+    email: "legacy@example.com",
+    email_verified: true,
+  }).firestore();
+  await assertSucceeds(
+    legacyDb.collection("users").doc(legacyUid).set(
+      {
+        firstName: "Legacy",
+        surname: "Pro",
+        name: "Legacy Pro",
+        countryCode: "+91",
+        phoneNumber: "9123456789",
         profilePictureBase64: "",
         profileCompleted: true,
         updatedAt: serverTs(),
@@ -359,24 +451,15 @@ test("Web profile: 8-field user creation + merge profile update succeed while ad
     )
   );
 
-  // Cannot elevate subscriptionStatus or role via merge
-  await assertFails(
-    webDb.collection("users").doc(webUid).set(
-      {
-        subscriptionStatus: "Lifetime",
-        updatedAt: serverTs(),
-      },
-      { merge: true }
-    )
-  );
-  await assertFails(
-    webDb.collection("users").doc(webUid).set(
-      {
-        role: "Admin",
-        updatedAt: serverTs(),
-      },
-      { merge: true }
-    )
+  // Admin keeps full access to update user plan/role fields
+  await assertSucceeds(
+    admDb.collection("users").doc(webUid).update({
+      subscriptionStatus: "Active",
+      activePlanName: "Pro 30 Days",
+      planStartedAt: serverTs(),
+      planExpiresAt: new Date(Date.now() + 30 * 86400000),
+      chatMuted: false,
+      updatedAt: serverTs(),
+    })
   );
 });
-

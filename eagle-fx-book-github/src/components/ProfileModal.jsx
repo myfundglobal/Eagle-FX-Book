@@ -29,8 +29,10 @@ export default function ProfileModal({
     profile?.surname || nameParts.slice(1).join(" ") || ""
   );
   const [countryCode, setCountryCode] = useState(profile?.countryCode || "+91");
-  const [phoneNumber, setPhoneNumber] = useState(profile?.phoneNumber || "");
-  const [dpBase64, setDpBase64] = useState(profile?.profilePictureBase64 || "");
+  const [phoneNumber, setPhoneNumber] = useState(profile?.phoneNumber || profile?.phone || "");
+  const [dpBase64, setDpBase64] = useState(
+    profile?.profilePictureBase64 || profile?.photoURL || profile?.photo || ""
+  );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [errorCode, setErrorCode] = useState("");

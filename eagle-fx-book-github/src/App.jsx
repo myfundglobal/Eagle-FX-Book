@@ -348,29 +348,20 @@ export default function App() {
     };
 
     const existingSnap = await getDoc(userRef);
-    const payload = existingSnap.exists()
-      ? profileFields
-      : {
-          uid: user.uid,
-          role: "User",
-          accessStatus: "Active",
-          subscriptionStatus: "None",
-          activePlanName: "Free Tier",
-          email: (user.email || "trader@eaglefxbook.app").trim().slice(0, 150),
-          createdAt: serverTimestamp(),
-          ...profileFields
-        };
+    if (!existingSnap.exists()) {
+      await setDoc(userRef, {
+        uid: user.uid,
+        role: "User",
+        accessStatus: "Active",
+        subscriptionStatus: "None",
+        activePlanName: "Free Tier",
+        name: fullName,
+        email: (user.email || "trader@eaglefxbook.app").trim().slice(0, 150),
+        createdAt: serverTimestamp()
+      });
+    }
 
-    console.log("[TraderProfileSave]", {
-      path: userRef.path,
-      exists: existingSnap.exists(),
-      payload: {
-        ...payload,
-        profilePictureBase64: cleanPhoto ? `<base64:${cleanPhoto.length}chars>` : ""
-      }
-    });
-
-    await setDoc(userRef, payload, { merge: true });
+    await setDoc(userRef, profileFields, { merge: true });
     setShowProfileModal(false);
   };
 

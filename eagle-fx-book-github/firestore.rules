@@ -53,30 +53,54 @@ service cloud.firestore {
              ]) &&
              data.keys().hasOnly([
                'uid', 'userId', 'name', 'firstName', 'surname', 'countryCode',
-               'phoneNumber', 'phone', 'email', 'profilePictureBase64', 'photo',
+               'phoneNumber', 'phone', 'email', 'profilePictureBase64', 'photo', 'photoURL',
                'role', 'accessStatus', 'activePlanName', 'subscriptionStatus',
-               'subscriptionExpiresAtMillis', 'profileCompleted', 'createdAt', 'updatedAt'
+               'subscriptionExpiresAtMillis', 'planStartedAt', 'planExpiresAt',
+               'chatMuted', 'profileCompleted', 'createdAt', 'updatedAt'
              ]) &&
              (!('uid' in data) || (data.uid is string && data.uid.size() >= 1 && data.uid.size() <= 128)) &&
              (!('userId' in data) || (data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128)) &&
              ('uid' in data || 'userId' in data) &&
-             data.name is string && data.name.size() >= 1 && data.name.size() <= 80 &&
-             (!('firstName' in data) || (data.firstName is string && data.firstName.size() <= 60)) &&
-             (!('surname' in data) || (data.surname is string && data.surname.size() <= 60)) &&
-             (!('countryCode' in data) || (data.countryCode is string && data.countryCode.size() >= 1 && data.countryCode.size() <= 8)) &&
-             (!('phoneNumber' in data) || (data.phoneNumber is string && data.phoneNumber.size() <= 20)) &&
-             (!('phone' in data) || (data.phone is string && data.phone.size() <= 20)) &&
+             data.name is string && data.name.size() >= 1 && data.name.size() <= 100 &&
+             (!('firstName' in data) || (data.firstName is string && data.firstName.size() <= 100)) &&
+             (!('surname' in data) || (data.surname is string && data.surname.size() <= 100)) &&
+             (!('countryCode' in data) || (data.countryCode is string && data.countryCode.size() >= 1 && data.countryCode.size() <= 10)) &&
+             (!('phoneNumber' in data) || (data.phoneNumber is string && data.phoneNumber.matches('^[0-9]{0,20}$'))) &&
+             (!('phone' in data) || (data.phone is string && data.phone.matches('^[0-9]{0,20}$'))) &&
              data.email is string && data.email.size() >= 3 && data.email.size() <= 150 &&
              (!('profilePictureBase64' in data) || (data.profilePictureBase64 is string && data.profilePictureBase64.size() <= 350000)) &&
              (!('photo' in data) || (data.photo is string && data.photo.size() <= 350000)) &&
+             (!('photoURL' in data) || (data.photoURL is string && data.photoURL.size() <= 350000)) &&
              data.role in ['Admin', 'User'] &&
              data.accessStatus in ['Active', 'Blocked', 'Suspended'] &&
              data.activePlanName is string && data.activePlanName.size() <= 80 &&
              data.subscriptionStatus in ['None', 'Active', 'Lifetime'] &&
              (!('subscriptionExpiresAtMillis' in data) || (data.subscriptionExpiresAtMillis is int && data.subscriptionExpiresAtMillis >= 0)) &&
+             (!('planStartedAt' in data) || (data.planStartedAt is timestamp && data.planStartedAt <= request.time)) &&
+             (!('planExpiresAt' in data) || data.planExpiresAt == null || data.planExpiresAt is timestamp) &&
+             (!('chatMuted' in data) || data.chatMuted is bool) &&
              (!('profileCompleted' in data) || (data.profileCompleted is bool)) &&
              data.createdAt is timestamp && data.createdAt <= request.time &&
              (!('updatedAt' in data) || (data.updatedAt is timestamp && data.updatedAt <= request.time));
+    }
+
+    function isValidOwnerProfileUpdate(data, oldData) {
+      return data.diff(oldData).affectedKeys().hasOnly([
+               'name', 'firstName', 'surname', 'phone', 'phoneNumber',
+               'countryCode', 'photoURL', 'photo', 'profilePictureBase64',
+               'profileCompleted', 'updatedAt'
+             ]) &&
+             (!('name' in data.diff(oldData).affectedKeys()) || (data.name is string && data.name.size() >= 1 && data.name.size() <= 100)) &&
+             (!('firstName' in data.diff(oldData).affectedKeys()) || (data.firstName is string && data.firstName.size() <= 100)) &&
+             (!('surname' in data.diff(oldData).affectedKeys()) || (data.surname is string && data.surname.size() <= 100)) &&
+             (!('countryCode' in data.diff(oldData).affectedKeys()) || (data.countryCode is string && data.countryCode.size() >= 1 && data.countryCode.size() <= 10)) &&
+             (!('phone' in data.diff(oldData).affectedKeys()) || (data.phone is string && data.phone.matches('^[0-9]{0,20}$'))) &&
+             (!('phoneNumber' in data.diff(oldData).affectedKeys()) || (data.phoneNumber is string && data.phoneNumber.matches('^[0-9]{0,20}$'))) &&
+             (!('photoURL' in data.diff(oldData).affectedKeys()) || (data.photoURL is string && data.photoURL.size() <= 350000)) &&
+             (!('photo' in data.diff(oldData).affectedKeys()) || (data.photo is string && data.photo.size() <= 350000)) &&
+             (!('profilePictureBase64' in data.diff(oldData).affectedKeys()) || (data.profilePictureBase64 is string && data.profilePictureBase64.size() <= 350000)) &&
+             (!('profileCompleted' in data.diff(oldData).affectedKeys()) || (data.profileCompleted is bool)) &&
+             (!('updatedAt' in data.diff(oldData).affectedKeys()) || (data.updatedAt is timestamp && data.updatedAt <= request.time));
     }
 
     function isValidTrade(data) {
@@ -179,7 +203,7 @@ service cloud.firestore {
              ]) &&
              data.keys().hasOnly([
                'date', 'time', 'timestampMillis', 'currency', 'event',
-               'impact', 'forecast', 'previous', 'createdAt', 'updatedAt'
+               'impact', 'forecast', 'previous', 'actual', 'createdAt', 'updatedAt'
              ]) &&
              data.date is string && data.date.size() >= 4 && data.date.size() <= 24 &&
              data.time is string && data.time.size() >= 2 && data.time.size() <= 24 &&
@@ -189,6 +213,7 @@ service cloud.firestore {
              data.impact in ['High', 'Medium', 'Low'] &&
              data.forecast is string && data.forecast.size() <= 32 &&
              data.previous is string && data.previous.size() <= 32 &&
+             (!('actual' in data) || (data.actual is string && data.actual.size() <= 40)) &&
              data.createdAt is timestamp && data.createdAt <= request.time &&
              data.updatedAt is timestamp && data.updatedAt <= request.time;
     }
@@ -287,28 +312,18 @@ service cloud.firestore {
                        incoming().accessStatus == 'Active' &&
                        (incoming().role == 'User' || isAdmin()) &&
                        incoming().subscriptionStatus == 'None' &&
-                       (!('subscriptionExpiresAtMillis' in incoming()) || incoming().subscriptionExpiresAtMillis == 0);
+                       (!('subscriptionExpiresAtMillis' in incoming()) || incoming().subscriptionExpiresAtMillis == 0) &&
+                       !('planStartedAt' in incoming()) &&
+                       !('planExpiresAt' in incoming()) &&
+                       (!('chatMuted' in incoming()) || incoming().chatMuted == false);
 
       allow update: if isValidId(userId) &&
-                       isValidUser(incoming()) &&
-                       (!('userId' in existing()) || incoming().userId == existing().userId) &&
-                       (!('uid' in existing()) || incoming().uid == existing().uid) &&
-                       incoming().createdAt == existing().createdAt &&
                        (
                          isAdmin() ||
                          (
                            isOwner(userId) &&
-                           existing().accessStatus == 'Active' &&
-                           incoming().role == existing().role &&
-                           incoming().accessStatus == existing().accessStatus &&
-                           incoming().activePlanName == existing().activePlanName &&
-                           incoming().subscriptionStatus == existing().subscriptionStatus &&
-                           (!('subscriptionExpiresAtMillis' in existing()) || incoming().subscriptionExpiresAtMillis == existing().subscriptionExpiresAtMillis) &&
-                           incoming().diff(existing()).affectedKeys().hasOnly([
-                             'name', 'firstName', 'surname', 'countryCode',
-                             'phoneNumber', 'phone', 'profilePictureBase64', 'photo',
-                             'profileCompleted', 'updatedAt'
-                           ])
+                           (!('accessStatus' in existing()) || existing().accessStatus == 'Active') &&
+                           isValidOwnerProfileUpdate(incoming(), existing())
                          )
                        );
 
