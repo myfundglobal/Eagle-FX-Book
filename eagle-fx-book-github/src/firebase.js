@@ -6,25 +6,18 @@ import {
   browserLocalPersistence
 } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
+import appletConfig from "../firebase-applet-config.json";
 
 export const ADMIN_EMAIL = "myfundglobal@gmail.com";
 
-export const FIRESTORE_DATABASE_ID =
-  import.meta.env.VITE_FIREBASE_DATABASE_ID ||
-  "ai-studio-android-tradepul-48376a54-d71b-4eb3-b847-0095db24e4f2";
+export const FIRESTORE_DATABASE_ID = appletConfig.firestoreDatabaseId;
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "",
-  authDomain:
-    import.meta.env.VITE_FIREBASE_AUTH_DOMAIN ||
-    "gen-lang-client-0792542335.firebaseapp.com",
-  projectId:
-    import.meta.env.VITE_FIREBASE_PROJECT_ID || "gen-lang-client-0792542335",
-  storageBucket:
-    import.meta.env.VITE_FIREBASE_STORAGE_BUCKET ||
-    "gen-lang-client-0792542335.firebasestorage.app",
-  messagingSenderId:
-    import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "242561924604",
+  authDomain: appletConfig.authDomain,
+  projectId: appletConfig.projectId,
+  storageBucket: appletConfig.storageBucket,
+  messagingSenderId: appletConfig.messagingSenderId,
   appId: import.meta.env.VITE_FIREBASE_APP_ID || ""
 };
 

@@ -1,0 +1,513 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global safety net: deny everything by default
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- GLOBAL HELPERS ---
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Strict Admin check: ONLY verified email Myfundglobal@gmail.com (case-insensitive Gmail match)
+    function isAdmin() {
+      return isSignedIn() &&
+             'email_verified' in request.auth.token &&
+             request.auth.token.email_verified == true &&
+             'email' in request.auth.token &&
+             (request.auth.token.email == 'myfundglobal@gmail.com' ||
+              request.auth.token.email == 'Myfundglobal@gmail.com');
+    }
+
+    function isNotBlocked() {
+      return isAdmin() ||
+             !exists(/databases/$(database)/documents/users/$(request.auth.uid)) ||
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.accessStatus == 'Active';
+    }
+
+    // --- VALIDATION HELPERS ---
+
+    function isValidUser(data) {
+      return data.keys().hasAll([
+               'name', 'email', 'role', 'accessStatus',
+               'activePlanName', 'subscriptionStatus', 'createdAt'
+             ]) &&
+             data.keys().hasOnly([
+               'uid', 'userId', 'name', 'firstName', 'surname', 'countryCode',
+               'phoneNumber', 'phone', 'email', 'profilePictureBase64', 'photo',
+               'role', 'accessStatus', 'activePlanName', 'subscriptionStatus',
+               'subscriptionExpiresAtMillis', 'profileCompleted', 'createdAt', 'updatedAt'
+             ]) &&
+             (!('uid' in data) || (data.uid is string && data.uid.size() >= 1 && data.uid.size() <= 128)) &&
+             (!('userId' in data) || (data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128)) &&
+             ('uid' in data || 'userId' in data) &&
+             data.name is string && data.name.size() >= 1 && data.name.size() <= 80 &&
+             (!('firstName' in data) || (data.firstName is string && data.firstName.size() <= 60)) &&
+             (!('surname' in data) || (data.surname is string && data.surname.size() <= 60)) &&
+             (!('countryCode' in data) || (data.countryCode is string && data.countryCode.size() >= 1 && data.countryCode.size() <= 8)) &&
+             (!('phoneNumber' in data) || (data.phoneNumber is string && data.phoneNumber.size() <= 20)) &&
+             (!('phone' in data) || (data.phone is string && data.phone.size() <= 20)) &&
+             data.email is string && data.email.size() >= 3 && data.email.size() <= 150 &&
+             (!('profilePictureBase64' in data) || (data.profilePictureBase64 is string && data.profilePictureBase64.size() <= 350000)) &&
+             (!('photo' in data) || (data.photo is string && data.photo.size() <= 350000)) &&
+             data.role in ['Admin', 'User'] &&
+             data.accessStatus in ['Active', 'Blocked', 'Suspended'] &&
+             data.activePlanName is string && data.activePlanName.size() <= 80 &&
+             data.subscriptionStatus in ['None', 'Active', 'Lifetime'] &&
+             (!('subscriptionExpiresAtMillis' in data) || (data.subscriptionExpiresAtMillis is int && data.subscriptionExpiresAtMillis >= 0)) &&
+             (!('profileCompleted' in data) || (data.profileCompleted is bool)) &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             (!('updatedAt' in data) || (data.updatedAt is timestamp && data.updatedAt <= request.time));
+    }
+
+    function isValidTrade(data) {
+      return data.keys().hasAll([
+               'userId', 'date', 'monthKey', 'pair', 'side', 'lotSize',
+               'entryPrice', 'exitPrice', 'stopLoss', 'takeProfit', 'riskReward',
+               'strategyTags', 'pnl', 'notes', 'screenshotBase64', 'createdAt', 'updatedAt'
+             ]) &&
+             data.keys().hasOnly([
+               'userId', 'date', 'monthKey', 'pair', 'side', 'lotSize',
+               'entryPrice', 'exitPrice', 'stopLoss', 'takeProfit', 'riskReward',
+               'strategyTags', 'pnl', 'notes', 'screenshotBase64', 'createdAt', 'updatedAt'
+             ]) &&
+             data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.date is string && data.date.size() >= 4 && data.date.size() <= 24 &&
+             data.monthKey is string && data.monthKey.size() >= 4 && data.monthKey.size() <= 16 &&
+             data.pair is string && data.pair.size() >= 2 && data.pair.size() <= 24 &&
+             data.side in ['Buy', 'Sell'] &&
+             data.lotSize is number && data.lotSize > 0 && data.lotSize <= 10000 &&
+             data.entryPrice is number && data.entryPrice > 0 &&
+             data.exitPrice is number && data.exitPrice > 0 &&
+             data.stopLoss is number && data.stopLoss >= 0 &&
+             data.takeProfit is number && data.takeProfit >= 0 &&
+             data.riskReward is number && data.riskReward >= 0 && data.riskReward <= 1000 &&
+             data.strategyTags is list && data.strategyTags.size() <= 6 &&
+             (data.strategyTags.size() == 0 || data.strategyTags[0] is string) &&
+             data.pnl is number &&
+             data.notes is string && data.notes.size() <= 500 &&
+             data.screenshotBase64 is string && data.screenshotBase64.size() <= 350000 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidSubscriptionPlan(data) {
+      return data.keys().hasAll([
+               'name', 'durationLabel', 'durationDays', 'priceUsd', 'priceInr',
+               'features', 'badgeText', 'isActive', 'createdAt', 'updatedAt'
+             ]) &&
+             data.keys().hasOnly([
+               'name', 'durationLabel', 'durationDays', 'priceUsd', 'priceInr',
+               'features', 'badgeText', 'isActive', 'createdAt', 'updatedAt'
+             ]) &&
+             data.name is string && data.name.size() >= 2 && data.name.size() <= 100 &&
+             data.durationLabel is string && data.durationLabel.size() >= 2 && data.durationLabel.size() <= 40 &&
+             data.durationDays is int && data.durationDays >= 1 && data.durationDays <= 50000 &&
+             data.priceUsd is number && data.priceUsd > 0 &&
+             data.priceInr is number && data.priceInr > 0 &&
+             data.features is list && data.features.size() <= 10 &&
+             (data.features.size() == 0 || data.features[0] is string) &&
+             data.badgeText is string && data.badgeText.size() <= 32 &&
+             data.isActive is bool &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidUnlockedProduct(data) {
+      return data.keys().hasAll(['productId', 'orderId', 'productName', 'fileLink', 'licenseKey', 'unlockedAt']) &&
+             data.keys().hasOnly(['productId', 'orderId', 'productName', 'fileLink', 'licenseKey', 'unlockedAt']) &&
+             data.productId is string && data.productId.size() >= 1 && data.productId.size() <= 128 &&
+             data.orderId is string && data.orderId.size() >= 1 && data.orderId.size() <= 128 &&
+             data.productName is string && data.productName.size() >= 1 && data.productName.size() <= 120 &&
+             data.fileLink is string && data.fileLink.size() >= 1 && data.fileLink.size() <= 500 &&
+             data.licenseKey is string && data.licenseKey.size() >= 1 && data.licenseKey.size() <= 128 &&
+             data.unlockedAt is timestamp && data.unlockedAt <= request.time;
+    }
+
+    function isValidCommunityPost(data) {
+      return data.keys().hasAll([
+               'authorId', 'authorName', 'dateLabel', 'title', 'adminMessage',
+               'pairTag', 'bias', 'chartImageKey', 'likesCount', 'createdAt', 'updatedAt'
+             ]) &&
+             data.keys().hasOnly([
+               'authorId', 'authorName', 'dateLabel', 'title', 'adminMessage',
+               'pairTag', 'bias', 'chartImageKey', 'likesCount', 'createdAt', 'updatedAt'
+             ]) &&
+             data.authorId is string && data.authorId.size() >= 1 && data.authorId.size() <= 128 &&
+             data.authorName is string && data.authorName.size() >= 1 && data.authorName.size() <= 80 &&
+             data.dateLabel is string && data.dateLabel.size() >= 2 && data.dateLabel.size() <= 40 &&
+             data.title is string && data.title.size() >= 2 && data.title.size() <= 120 &&
+             data.adminMessage is string && data.adminMessage.size() >= 2 && data.adminMessage.size() <= 2000 &&
+             data.pairTag is string && data.pairTag.size() >= 1 && data.pairTag.size() <= 24 &&
+             data.bias in ['Bullish', 'Bearish', 'Neutral'] &&
+             data.chartImageKey is string && data.chartImageKey.size() <= 350000 &&
+             data.likesCount is int && data.likesCount >= 0 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidPostLike(data, userId) {
+      return data.keys().hasAll(['userId', 'createdAt']) &&
+             data.keys().hasOnly(['userId', 'createdAt']) &&
+             data.userId is string && data.userId == userId &&
+             data.createdAt is timestamp && data.createdAt <= request.time;
+    }
+
+    function isValidNewsEvent(data) {
+      return data.keys().hasAll([
+               'date', 'time', 'timestampMillis', 'currency', 'event',
+               'impact', 'forecast', 'previous', 'createdAt', 'updatedAt'
+             ]) &&
+             data.keys().hasOnly([
+               'date', 'time', 'timestampMillis', 'currency', 'event',
+               'impact', 'forecast', 'previous', 'createdAt', 'updatedAt'
+             ]) &&
+             data.date is string && data.date.size() >= 4 && data.date.size() <= 24 &&
+             data.time is string && data.time.size() >= 2 && data.time.size() <= 24 &&
+             data.timestampMillis is int && data.timestampMillis >= 0 &&
+             data.currency is string && data.currency.size() >= 2 && data.currency.size() <= 12 &&
+             data.event is string && data.event.size() >= 2 && data.event.size() <= 160 &&
+             data.impact in ['High', 'Medium', 'Low'] &&
+             data.forecast is string && data.forecast.size() <= 32 &&
+             data.previous is string && data.previous.size() <= 32 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidProduct(data) {
+      return data.keys().hasAll([
+               'name', 'category', 'description', 'version', 'priceUsd',
+               'priceInr', 'coverImageKey', 'features', 'isActive', 'createdAt', 'updatedAt'
+             ]) &&
+             data.keys().hasOnly([
+               'name', 'category', 'description', 'version', 'priceUsd',
+               'priceInr', 'coverImageKey', 'features', 'isActive', 'createdAt', 'updatedAt'
+             ]) &&
+             data.name is string && data.name.size() >= 2 && data.name.size() <= 120 &&
+             data.category in ['Algo Bot', 'Trading Software', 'Indicator'] &&
+             data.description is string && data.description.size() >= 2 && data.description.size() <= 1500 &&
+             data.version is string && data.version.size() >= 1 && data.version.size() <= 24 &&
+             data.priceUsd is number && data.priceUsd > 0 &&
+             data.priceInr is number && data.priceInr > 0 &&
+             data.coverImageKey is string && data.coverImageKey.size() <= 350000 &&
+             data.features is list && data.features.size() <= 10 &&
+             (data.features.size() == 0 || data.features[0] is string) &&
+             data.isActive is bool &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidProductDeliverable(data) {
+      return data.keys().hasAll(['productId', 'fileLink', 'licenseInstructions', 'updatedAt']) &&
+             data.keys().hasOnly(['productId', 'fileLink', 'licenseInstructions', 'updatedAt']) &&
+             data.productId is string && data.productId.size() >= 1 && data.productId.size() <= 128 &&
+             data.fileLink is string && data.fileLink.size() >= 3 && data.fileLink.size() <= 500 &&
+             data.licenseInstructions is string && data.licenseInstructions.size() <= 1000 &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidOrder(data) {
+      return data.keys().hasAll([
+               'userId', 'userEmail', 'userName', 'productId', 'productName',
+               'itemType', 'durationDays', 'amountLabel', 'paymentMethod',
+               'transactionId', 'paymentScreenshotBase64', 'status', 'adminNote',
+               'createdAt', 'updatedAt'
+             ]) &&
+             data.keys().hasOnly([
+               'userId', 'userEmail', 'userName', 'productId', 'productName',
+               'itemType', 'durationDays', 'amountLabel', 'paymentMethod',
+               'transactionId', 'paymentScreenshotBase64', 'status', 'adminNote',
+               'createdAt', 'updatedAt'
+             ]) &&
+             data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.userEmail is string && data.userEmail.size() >= 3 && data.userEmail.size() <= 150 &&
+             data.userName is string && data.userName.size() >= 1 && data.userName.size() <= 80 &&
+             data.productId is string && data.productId.size() >= 1 && data.productId.size() <= 128 &&
+             data.productName is string && data.productName.size() >= 1 && data.productName.size() <= 120 &&
+             data.itemType in ['Product', 'Plan'] &&
+             data.durationDays is int && data.durationDays >= 0 && data.durationDays <= 50000 &&
+             data.amountLabel is string && data.amountLabel.size() >= 1 && data.amountLabel.size() <= 60 &&
+             data.paymentMethod in ['UPI', 'Crypto'] &&
+             data.transactionId is string && data.transactionId.size() >= 4 && data.transactionId.size() <= 128 &&
+             data.paymentScreenshotBase64 is string && data.paymentScreenshotBase64.size() <= 350000 &&
+             data.status in ['Pending', 'Approved', 'Rejected'] &&
+             data.adminNote is string && data.adminNote.size() <= 300 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidAdminSettings(data) {
+      return data.keys().hasAll([
+               'currentUpiId', 'currentUpiQrImageBase64', 'currentCryptoWalletAddress',
+               'cryptoNetwork', 'updatedBy', 'updatedAt'
+             ]) &&
+             data.keys().hasOnly([
+               'currentUpiId', 'currentUpiQrImageBase64', 'currentCryptoWalletAddress',
+               'cryptoNetwork', 'updatedBy', 'updatedAt'
+             ]) &&
+             data.currentUpiId is string && data.currentUpiId.size() >= 3 && data.currentUpiId.size() <= 120 &&
+             data.currentUpiQrImageBase64 is string && data.currentUpiQrImageBase64.size() <= 350000 &&
+             data.currentCryptoWalletAddress is string && data.currentCryptoWalletAddress.size() >= 8 && data.currentCryptoWalletAddress.size() <= 150 &&
+             data.cryptoNetwork is string && data.cryptoNetwork.size() >= 2 && data.cryptoNetwork.size() <= 40 &&
+             data.updatedBy is string && data.updatedBy.size() >= 1 && data.updatedBy.size() <= 128 &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    // --- COLLECTION RULES ---
+
+    // 1. Users (PII Protected)
+    match /users/{userId} {
+      allow get: if isValidId(userId) && (isOwner(userId) || isAdmin());
+      allow list: if isAdmin();
+
+      allow create: if isValidId(userId) &&
+                       isOwner(userId) &&
+                       isValidUser(incoming()) &&
+                       (!('userId' in incoming()) || incoming().userId == request.auth.uid) &&
+                       (!('uid' in incoming()) || incoming().uid == request.auth.uid) &&
+                       incoming().accessStatus == 'Active' &&
+                       (incoming().role == 'User' || isAdmin()) &&
+                       incoming().subscriptionStatus == 'None' &&
+                       (!('subscriptionExpiresAtMillis' in incoming()) || incoming().subscriptionExpiresAtMillis == 0);
+
+      allow update: if isValidId(userId) &&
+                       isValidUser(incoming()) &&
+                       (!('userId' in existing()) || incoming().userId == existing().userId) &&
+                       (!('uid' in existing()) || incoming().uid == existing().uid) &&
+                       incoming().createdAt == existing().createdAt &&
+                       (
+                         isAdmin() ||
+                         (
+                           isOwner(userId) &&
+                           existing().accessStatus == 'Active' &&
+                           incoming().role == existing().role &&
+                           incoming().accessStatus == existing().accessStatus &&
+                           incoming().activePlanName == existing().activePlanName &&
+                           incoming().subscriptionStatus == existing().subscriptionStatus &&
+                           (!('subscriptionExpiresAtMillis' in existing()) || incoming().subscriptionExpiresAtMillis == existing().subscriptionExpiresAtMillis) &&
+                           incoming().diff(existing()).affectedKeys().hasOnly([
+                             'name', 'firstName', 'surname', 'countryCode',
+                             'phoneNumber', 'phone', 'profilePictureBase64', 'photo',
+                             'profileCompleted', 'updatedAt'
+                           ])
+                         )
+                       );
+
+      allow delete: if false;
+
+      // 1a. User-Private Trade Journal
+      match /trades/{tradeId} {
+        allow get: if isValidId(userId) && isValidId(tradeId) && isOwner(userId);
+        allow list: if isValidId(userId) && isOwner(userId);
+
+        allow create: if isValidId(userId) && isValidId(tradeId) &&
+                         isOwner(userId) &&
+                         isNotBlocked() &&
+                         isValidTrade(incoming()) &&
+                         incoming().userId == request.auth.uid;
+
+        allow update: if isValidId(userId) && isValidId(tradeId) &&
+                         isOwner(userId) &&
+                         isNotBlocked() &&
+                         isValidTrade(incoming()) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt;
+
+        allow delete: if isValidId(userId) && isValidId(tradeId) && isOwner(userId) && isNotBlocked();
+      }
+
+      // 1b. User's Unlocked Product Downloads (written ONLY by Admin on order approval)
+      match /unlocked_products/{productId} {
+        allow get: if isValidId(userId) && isValidId(productId) && (isOwner(userId) || isAdmin());
+        allow list: if isValidId(userId) && (isOwner(userId) || isAdmin());
+
+        allow create, update: if isValidId(userId) && isValidId(productId) &&
+                                 isAdmin() &&
+                                 isValidUnlockedProduct(incoming()) &&
+                                 incoming().productId == productId;
+
+        allow delete: if isValidId(userId) && isValidId(productId) && isAdmin();
+      }
+    }
+
+    // 2. Dynamic Subscription Plans (Managed strictly by Admin)
+    match /subscription_plans/{planId} {
+      allow get: if isValidId(planId) && isSignedIn();
+      allow list: if isSignedIn();
+
+      allow create: if isValidId(planId) &&
+                       isAdmin() &&
+                       isValidSubscriptionPlan(incoming());
+
+      allow update: if isValidId(planId) &&
+                       isAdmin() &&
+                       isValidSubscriptionPlan(incoming()) &&
+                       incoming().createdAt == existing().createdAt;
+
+      allow delete: if isValidId(planId) && isAdmin();
+    }
+
+    // 3. Private Community Feed (Admin posts; authenticated active users read & atomically like)
+    match /community_posts/{postId} {
+      allow get: if isValidId(postId) && isSignedIn();
+      allow list: if isSignedIn();
+
+      allow create: if isValidId(postId) &&
+                       isAdmin() &&
+                       isValidCommunityPost(incoming()) &&
+                       incoming().authorId == request.auth.uid &&
+                       incoming().likesCount == 0;
+
+      allow update: if isValidId(postId) &&
+                       isSignedIn() &&
+                       isNotBlocked() &&
+                       isValidCommunityPost(incoming()) &&
+                       incoming().authorId == existing().authorId &&
+                       incoming().createdAt == existing().createdAt &&
+                       (
+                         isAdmin() ||
+                         (
+                           incoming().diff(existing()).affectedKeys().hasOnly(['likesCount', 'updatedAt']) &&
+                           (
+                             (
+                               incoming().likesCount == existing().likesCount + 1 &&
+                               !exists(/databases/$(database)/documents/community_posts/$(postId)/likes/$(request.auth.uid)) &&
+                               existsAfter(/databases/$(database)/documents/community_posts/$(postId)/likes/$(request.auth.uid))
+                             ) ||
+                             (
+                               incoming().likesCount == existing().likesCount - 1 &&
+                               incoming().likesCount >= 0 &&
+                               exists(/databases/$(database)/documents/community_posts/$(postId)/likes/$(request.auth.uid)) &&
+                               !existsAfter(/databases/$(database)/documents/community_posts/$(postId)/likes/$(request.auth.uid))
+                             )
+                           )
+                         )
+                       );
+
+      allow delete: if isValidId(postId) && isAdmin();
+
+      match /likes/{userId} {
+        allow get: if isValidId(postId) && isValidId(userId) && isOwner(userId);
+        allow list: if isValidId(postId) && isSignedIn() && resource.data.userId == request.auth.uid;
+
+        allow create: if isValidId(postId) && isValidId(userId) &&
+                         isOwner(userId) &&
+                         isNotBlocked() &&
+                         isValidPostLike(incoming(), userId) &&
+                         exists(/databases/$(database)/documents/community_posts/$(postId));
+
+        allow delete: if isValidId(postId) && isValidId(userId) && isOwner(userId) && isNotBlocked();
+        allow update: if false;
+      }
+    }
+
+    // 4. Economic News Calendar
+    match /news_calendar/{newsId} {
+      allow get: if isValidId(newsId) && isSignedIn();
+      allow list: if isSignedIn();
+
+      allow create: if isValidId(newsId) &&
+                       isAdmin() &&
+                       isValidNewsEvent(incoming());
+
+      allow update: if isValidId(newsId) &&
+                       isAdmin() &&
+                       isValidNewsEvent(incoming()) &&
+                       incoming().createdAt == existing().createdAt;
+
+      allow delete: if isValidId(newsId) && isAdmin();
+    }
+
+    // 5. Store Products (Public Catalog)
+    match /products/{productId} {
+      allow get: if isValidId(productId) && isSignedIn();
+      allow list: if isSignedIn();
+
+      allow create: if isValidId(productId) &&
+                       isAdmin() &&
+                       isValidProduct(incoming());
+
+      allow update: if isValidId(productId) &&
+                       isAdmin() &&
+                       isValidProduct(incoming()) &&
+                       incoming().createdAt == existing().createdAt;
+
+      allow delete: if isValidId(productId) && isAdmin();
+    }
+
+    // 5a. Product Deliverables (Admin-only hidden File_Link until order is approved)
+    match /product_deliverables/{productId} {
+      allow get, list: if isAdmin();
+
+      allow create, update: if isValidId(productId) &&
+                               isAdmin() &&
+                               isValidProductDeliverable(incoming()) &&
+                               incoming().productId == productId;
+
+      allow delete: if isValidId(productId) && isAdmin();
+    }
+
+    // 6. Orders (User-isolated payment proofs; Admin approves/rejects)
+    match /orders/{orderId} {
+      allow get: if isValidId(orderId) &&
+                    isSignedIn() &&
+                    (existing().userId == request.auth.uid || isAdmin());
+
+      allow list: if isSignedIn() &&
+                     (resource.data.userId == request.auth.uid || isAdmin());
+
+      allow create: if isValidId(orderId) &&
+                       isSignedIn() &&
+                       isNotBlocked() &&
+                       isValidOrder(incoming()) &&
+                       incoming().userId == request.auth.uid &&
+                       incoming().status == 'Pending' &&
+                       incoming().adminNote == '' &&
+                       (
+                         (incoming().itemType == 'Product' && exists(/databases/$(database)/documents/products/$(incoming().productId))) ||
+                         (incoming().itemType == 'Plan' && exists(/databases/$(database)/documents/subscription_plans/$(incoming().productId)))
+                       );
+
+      allow update: if isValidId(orderId) &&
+                       isAdmin() &&
+                       isValidOrder(incoming()) &&
+                       incoming().userId == existing().userId &&
+                       incoming().productId == existing().productId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['status', 'adminNote', 'updatedAt']);
+
+      allow delete: if isValidId(orderId) && isAdmin();
+    }
+
+    // 7. Admin Settings (Live UPI ID, UPI QR, Crypto Wallet)
+    match /admin_settings/{settingId} {
+      allow get: if isValidId(settingId) && isSignedIn();
+      allow list: if isSignedIn();
+
+      allow create, update: if isValidId(settingId) &&
+                               isAdmin() &&
+                               isValidAdminSettings(incoming());
+
+      allow delete: if false;
+    }
+  }
+}

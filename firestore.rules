@@ -48,33 +48,35 @@ service cloud.firestore {
 
     function isValidUser(data) {
       return data.keys().hasAll([
-               'userId', 'name', 'firstName', 'surname', 'countryCode', 'phoneNumber',
-               'email', 'profilePictureBase64', 'role', 'accessStatus',
-               'activePlanName', 'subscriptionStatus', 'subscriptionExpiresAtMillis',
-               'profileCompleted', 'createdAt', 'updatedAt'
+               'name', 'email', 'role', 'accessStatus',
+               'activePlanName', 'subscriptionStatus', 'createdAt'
              ]) &&
              data.keys().hasOnly([
-               'userId', 'name', 'firstName', 'surname', 'countryCode', 'phoneNumber',
-               'email', 'profilePictureBase64', 'role', 'accessStatus',
-               'activePlanName', 'subscriptionStatus', 'subscriptionExpiresAtMillis',
-               'profileCompleted', 'createdAt', 'updatedAt'
+               'uid', 'userId', 'name', 'firstName', 'surname', 'countryCode',
+               'phoneNumber', 'phone', 'email', 'profilePictureBase64', 'photo',
+               'role', 'accessStatus', 'activePlanName', 'subscriptionStatus',
+               'subscriptionExpiresAtMillis', 'profileCompleted', 'createdAt', 'updatedAt'
              ]) &&
-             data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             (!('uid' in data) || (data.uid is string && data.uid.size() >= 1 && data.uid.size() <= 128)) &&
+             (!('userId' in data) || (data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128)) &&
+             ('uid' in data || 'userId' in data) &&
              data.name is string && data.name.size() >= 1 && data.name.size() <= 80 &&
-             data.firstName is string && data.firstName.size() <= 60 &&
-             data.surname is string && data.surname.size() <= 60 &&
-             data.countryCode is string && data.countryCode.size() >= 1 && data.countryCode.size() <= 8 &&
-             data.phoneNumber is string && data.phoneNumber.size() <= 20 &&
+             (!('firstName' in data) || (data.firstName is string && data.firstName.size() <= 60)) &&
+             (!('surname' in data) || (data.surname is string && data.surname.size() <= 60)) &&
+             (!('countryCode' in data) || (data.countryCode is string && data.countryCode.size() >= 1 && data.countryCode.size() <= 8)) &&
+             (!('phoneNumber' in data) || (data.phoneNumber is string && data.phoneNumber.size() <= 20)) &&
+             (!('phone' in data) || (data.phone is string && data.phone.size() <= 20)) &&
              data.email is string && data.email.size() >= 3 && data.email.size() <= 150 &&
-             data.profilePictureBase64 is string && data.profilePictureBase64.size() <= 350000 &&
+             (!('profilePictureBase64' in data) || (data.profilePictureBase64 is string && data.profilePictureBase64.size() <= 350000)) &&
+             (!('photo' in data) || (data.photo is string && data.photo.size() <= 350000)) &&
              data.role in ['Admin', 'User'] &&
              data.accessStatus in ['Active', 'Blocked', 'Suspended'] &&
              data.activePlanName is string && data.activePlanName.size() <= 80 &&
              data.subscriptionStatus in ['None', 'Active', 'Lifetime'] &&
-             data.subscriptionExpiresAtMillis is int && data.subscriptionExpiresAtMillis >= 0 &&
-             data.profileCompleted is bool &&
+             (!('subscriptionExpiresAtMillis' in data) || (data.subscriptionExpiresAtMillis is int && data.subscriptionExpiresAtMillis >= 0)) &&
+             (!('profileCompleted' in data) || (data.profileCompleted is bool)) &&
              data.createdAt is timestamp && data.createdAt <= request.time &&
-             data.updatedAt is timestamp && data.updatedAt <= request.time;
+             (!('updatedAt' in data) || (data.updatedAt is timestamp && data.updatedAt <= request.time));
     }
 
     function isValidTrade(data) {
@@ -280,15 +282,17 @@ service cloud.firestore {
       allow create: if isValidId(userId) &&
                        isOwner(userId) &&
                        isValidUser(incoming()) &&
-                       incoming().userId == request.auth.uid &&
+                       (!('userId' in incoming()) || incoming().userId == request.auth.uid) &&
+                       (!('uid' in incoming()) || incoming().uid == request.auth.uid) &&
                        incoming().accessStatus == 'Active' &&
                        (incoming().role == 'User' || isAdmin()) &&
                        incoming().subscriptionStatus == 'None' &&
-                       incoming().subscriptionExpiresAtMillis == 0;
+                       (!('subscriptionExpiresAtMillis' in incoming()) || incoming().subscriptionExpiresAtMillis == 0);
 
       allow update: if isValidId(userId) &&
                        isValidUser(incoming()) &&
-                       incoming().userId == existing().userId &&
+                       (!('userId' in existing()) || incoming().userId == existing().userId) &&
+                       (!('uid' in existing()) || incoming().uid == existing().uid) &&
                        incoming().createdAt == existing().createdAt &&
                        (
                          isAdmin() ||
@@ -299,10 +303,11 @@ service cloud.firestore {
                            incoming().accessStatus == existing().accessStatus &&
                            incoming().activePlanName == existing().activePlanName &&
                            incoming().subscriptionStatus == existing().subscriptionStatus &&
-                           incoming().subscriptionExpiresAtMillis == existing().subscriptionExpiresAtMillis &&
+                           (!('subscriptionExpiresAtMillis' in existing()) || incoming().subscriptionExpiresAtMillis == existing().subscriptionExpiresAtMillis) &&
                            incoming().diff(existing()).affectedKeys().hasOnly([
                              'name', 'firstName', 'surname', 'countryCode',
-                             'phoneNumber', 'profilePictureBase64', 'profileCompleted', 'updatedAt'
+                             'phoneNumber', 'phone', 'profilePictureBase64', 'photo',
+                             'profileCompleted', 'updatedAt'
                            ])
                          )
                        );

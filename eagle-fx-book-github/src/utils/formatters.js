@@ -70,7 +70,12 @@ export async function compressImageToBase64(file, maxDim = 720, quality = 0.72) 
         canvas.height = h;
         const ctx = canvas.getContext("2d");
         ctx.drawImage(img, 0, 0, w, h);
-        const dataUrl = canvas.toDataURL("image/jpeg", quality);
+        let q = quality;
+        let dataUrl = canvas.toDataURL("image/jpeg", q);
+        while (dataUrl.length > 330000 && q > 0.25) {
+          q = Math.max(0.2, q - 0.12);
+          dataUrl = canvas.toDataURL("image/jpeg", q);
+        }
         resolve(dataUrl);
       };
       img.src = reader.result;

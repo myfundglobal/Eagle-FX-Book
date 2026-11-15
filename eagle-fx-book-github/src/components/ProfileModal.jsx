@@ -33,6 +33,7 @@ export default function ProfileModal({
   const [dpBase64, setDpBase64] = useState(profile?.profilePictureBase64 || "");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [errorCode, setErrorCode] = useState("");
   const [verifyMsg, setVerifyMsg] = useState("");
 
   const activeRule =
@@ -53,6 +54,7 @@ export default function ProfileModal({
   const handleSave = async (e) => {
     e.preventDefault();
     setError("");
+    setErrorCode("");
     if (firstName.trim().length < 2 || surname.trim().length < 1) {
       setError("Please enter both First Name and Surname.");
       return;
@@ -73,7 +75,14 @@ export default function ProfileModal({
         profilePictureBase64: dpBase64
       });
     } catch (err) {
-      setError(err.message || "Failed to update profile.");
+      console.error("[TraderProfileSaveError]", err);
+      const code = err?.code || "";
+      setErrorCode(code || "unknown");
+      if (code === "permission-denied") {
+        setError("Could not save Trader Profile due to database permission rules.");
+      } else {
+        setError(err?.message || "Failed to update profile.");
+      }
     } finally {
       setSaving(false);
     }
@@ -304,7 +313,17 @@ export default function ProfileModal({
           </div>
 
           {error && (
-            <div style={{ fontSize: "12px", color: "#FF5C5C" }}>{error}</div>
+            <div style={{ fontSize: "12px", color: "#FF5C5C", lineHeight: 1.45 }}>
+              <div>{error}</div>
+              {errorCode && (
+                <div
+                  className="font-mono-num"
+                  style={{ fontSize: "11px", color: "#8B8B95", marginTop: "3px" }}
+                >
+                  Firebase error code: {errorCode}
+                </div>
+              )}
+            </div>
           )}
 
           <button type="submit" disabled={saving} className="btn-red">

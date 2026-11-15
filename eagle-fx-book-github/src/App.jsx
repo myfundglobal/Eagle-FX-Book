@@ -122,16 +122,22 @@ export default function App() {
         try {
           const snap = await getDoc(userRef);
           if (!snap.exists()) {
-            await setDoc(userRef, {
-              uid: u.uid,
-              role: "User",
-              accessStatus: "Active",
-              subscriptionStatus: "None",
-              activePlanName: "Free Tier",
-              name: u.displayName || u.email?.split("@")[0] || "Trader",
-              email: u.email || "",
-              createdAt: serverTimestamp()
-            });
+            const cleanName = (u.displayName || u.email?.split("@")[0] || "Trader").trim().slice(0, 80) || "Trader";
+            const cleanEmail = (u.email || "trader@eaglefxbook.app").trim().slice(0, 150);
+            await setDoc(
+              userRef,
+              {
+                uid: u.uid,
+                role: "User",
+                accessStatus: "Active",
+                subscriptionStatus: "None",
+                activePlanName: "Free Tier",
+                name: cleanName,
+                email: cleanEmail,
+                createdAt: serverTimestamp()
+              },
+              { merge: true }
+            );
           }
         } catch (err) {
           console.warn("User doc sync skipped:", err);
@@ -238,6 +244,31 @@ export default function App() {
     return () => unsubs.forEach((fn) => fn());
   }, [user]);
 
+  useEffect(() => {
+    if (!user || !db || posts.length === 0) {
+      setLikedPostIds(new Set());
+      return;
+    }
+    let cancelled = false;
+    Promise.all(
+      posts.map(async (p) => {
+        try {
+          const snap = await getDoc(doc(db, "community_posts", p.id, "likes", user.uid));
+          return snap.exists() ? p.id : null;
+        } catch {
+          return null;
+        }
+      })
+    ).then((ids) => {
+      if (!cancelled) {
+        setLikedPostIds(new Set(ids.filter(Boolean)));
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [posts, user]);
+
   const switchTab = (tabId) => {
     setRouteBusy(true);
     setActiveTab(tabId);
@@ -253,9 +284,25 @@ export default function App() {
   const handleSaveTrade = async (payload) => {
     if (!user || !db) return;
     const { id, ...fields } = payload;
+    const cleanPair = String(fields.pair || "").trim().slice(0, 24);
     const body = {
-      ...fields,
       userId: user.uid,
+      date: String(fields.date || new Date().toISOString().slice(0, 16)).slice(0, 24),
+      monthKey: String(fields.monthKey || new Date().toISOString().slice(0, 7)).slice(0, 16),
+      pair: cleanPair.length >= 2 ? cleanPair : "EUR/USD",
+      side: fields.side === "Sell" ? "Sell" : "Buy",
+      lotSize: Math.max(0.0001, Math.min(10000, Number(fields.lotSize) || 0.01)),
+      entryPrice: Math.max(0.000001, Number(fields.entryPrice) || 1),
+      exitPrice: Math.max(0.000001, Number(fields.exitPrice) || 1),
+      stopLoss: Math.max(0, Number(fields.stopLoss) || 0),
+      takeProfit: Math.max(0, Number(fields.takeProfit) || 0),
+      riskReward: Math.max(0, Math.min(1000, Number(fields.riskReward) || 0)),
+      strategyTags: Array.isArray(fields.strategyTags)
+        ? fields.strategyTags.map((t) => String(t)).slice(0, 6)
+        : [],
+      pnl: Number(fields.pnl) || 0,
+      notes: String(fields.notes || "").slice(0, 500),
+      screenshotBase64: String(fields.screenshotBase64 || "").slice(0, 340000),
       updatedAt: serverTimestamp()
     };
     if (id) {
@@ -281,26 +328,65 @@ export default function App() {
 
   const handleSaveProfile = async (details) => {
     if (!user || !db) return;
-    await updateDoc(doc(db, "users", user.uid), {
-      ...details,
-      name: `${details.firstName} ${details.surname}`.trim(),
+    const userRef = doc(db, "users", user.uid);
+    const cleanFirst = String(details.firstName || "").trim().slice(0, 60);
+    const cleanSurname = String(details.surname || "").trim().slice(0, 60);
+    const fullName = `${cleanFirst} ${cleanSurname}`.trim().slice(0, 80) || "Trader";
+    const cleanCountry = String(details.countryCode || "+91").trim().slice(0, 8) || "+91";
+    const cleanPhone = String(details.phoneNumber || "").replace(/\D/g, "").slice(0, 20);
+    const cleanPhoto = String(details.profilePictureBase64 || "").slice(0, 340000);
+
+    const profileFields = {
+      firstName: cleanFirst,
+      surname: cleanSurname,
+      name: fullName,
+      countryCode: cleanCountry,
+      phoneNumber: cleanPhone,
+      profilePictureBase64: cleanPhoto,
       profileCompleted: true,
       updatedAt: serverTimestamp()
+    };
+
+    const existingSnap = await getDoc(userRef);
+    const payload = existingSnap.exists()
+      ? profileFields
+      : {
+          uid: user.uid,
+          role: "User",
+          accessStatus: "Active",
+          subscriptionStatus: "None",
+          activePlanName: "Free Tier",
+          email: (user.email || "trader@eaglefxbook.app").trim().slice(0, 150),
+          createdAt: serverTimestamp(),
+          ...profileFields
+        };
+
+    console.log("[TraderProfileSave]", {
+      path: userRef.path,
+      exists: existingSnap.exists(),
+      payload: {
+        ...payload,
+        profilePictureBase64: cleanPhoto ? `<base64:${cleanPhoto.length}chars>` : ""
+      }
     });
+
+    await setDoc(userRef, payload, { merge: true });
     setShowProfileModal(false);
   };
 
   const handleToggleLike = async (post) => {
     if (!user || !db) return;
-    const alreadyLiked = likedPostIds.has(post.id);
+    const postRef = doc(db, "community_posts", post.id);
+    const likeRef = doc(db, "community_posts", post.id, "likes", user.uid);
+    const likeSnap = await getDoc(likeRef);
+    const alreadyLiked = likeSnap.exists();
+
     const nextLiked = new Set(likedPostIds);
     if (alreadyLiked) nextLiked.delete(post.id);
     else nextLiked.add(post.id);
     setLikedPostIds(nextLiked);
 
     const batch = writeBatch(db);
-    const postRef = doc(db, "community_posts", post.id);
-    const likeRef = doc(db, "community_posts", post.id, "likes", user.uid);
     if (alreadyLiked) {
       batch.delete(likeRef);
       batch.update(postRef, { likesCount: increment(-1), updatedAt: serverTimestamp() });
@@ -314,10 +400,14 @@ export default function App() {
   const handleCreatePost = async (payload) => {
     if (!user || !db) return;
     await addDoc(collection(db, "community_posts"), {
-      ...payload,
+      title: String(payload.title || "").trim().slice(0, 120),
+      pairTag: String(payload.pairTag || "FX").trim().slice(0, 24),
+      bias: ["Bullish", "Bearish", "Neutral"].includes(payload.bias) ? payload.bias : "Neutral",
+      adminMessage: String(payload.adminMessage || "").trim().slice(0, 2000),
+      chartImageKey: String(payload.chartImageKey || "").slice(0, 340000),
       authorId: user.uid,
-      authorName: profile?.name || user.displayName || "Eagle FX Desk",
-      dateLabel: new Date().toLocaleDateString([], { month: "short", day: "numeric" }),
+      authorName: (profile?.name || user.displayName || "Eagle FX Desk").slice(0, 80),
+      dateLabel: new Date().toLocaleDateString([], { month: "short", day: "numeric" }).slice(0, 40),
       likesCount: 0,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
@@ -331,11 +421,20 @@ export default function App() {
 
   const handleSubmitOrder = async (payload) => {
     if (!user || !db) return;
+    const cleanEmail = (user.email || "trader@eaglefxbook.app").trim().slice(0, 150);
+    const cleanName = (profile?.name || user.displayName || "Trader").trim().slice(0, 80) || "Trader";
     await addDoc(collection(db, "orders"), {
-      ...payload,
       userId: user.uid,
-      userEmail: user.email || "",
-      userName: profile?.name || user.displayName || "Trader",
+      userEmail: cleanEmail.length >= 3 ? cleanEmail : "trader@eaglefxbook.app",
+      userName: cleanName,
+      productId: String(payload.productId || "").slice(0, 128),
+      productName: String(payload.productName || "Item").slice(0, 120),
+      itemType: payload.itemType === "Plan" ? "Plan" : "Product",
+      durationDays: Math.max(0, Math.min(50000, Math.round(Number(payload.durationDays) || 0))),
+      amountLabel: String(payload.amountLabel || "Order").slice(0, 60),
+      paymentMethod: payload.paymentMethod === "Crypto" ? "Crypto" : "UPI",
+      transactionId: String(payload.transactionId || "").trim().slice(0, 128),
+      paymentScreenshotBase64: String(payload.paymentScreenshotBase64 || "").slice(0, 340000),
       status: "Pending",
       adminNote: "",
       createdAt: serverTimestamp(),

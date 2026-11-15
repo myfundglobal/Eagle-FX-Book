@@ -317,3 +317,66 @@ test("Subscription plans & Store deliverables: Admin manages plans; Orders unloc
   // Alice can read plans
   await assertSucceeds(aliceDb.collection("subscription_plans").get());
 });
+
+test("Web profile: 8-field user creation + merge profile update succeed while admin fields remain protected", async () => {
+  const webUid = "web_trader_1";
+  const webDb = testEnv.authenticatedContext(webUid, {
+    email: "webtrader@example.com",
+    email_verified: true,
+  }).firestore();
+
+  // Initial create with exact 8 Web fields + serverTs
+  await assertSucceeds(
+    webDb.collection("users").doc(webUid).set(
+      {
+        uid: webUid,
+        role: "User",
+        accessStatus: "Active",
+        subscriptionStatus: "None",
+        activePlanName: "Free Tier",
+        name: "Web Trader",
+        email: "webtrader@example.com",
+        createdAt: serverTs(),
+      },
+      { merge: true }
+    )
+  );
+
+  // Merge update of Trader Profile fields only
+  await assertSucceeds(
+    webDb.collection("users").doc(webUid).set(
+      {
+        firstName: "Aarav",
+        surname: "Sharma",
+        name: "Aarav Sharma",
+        countryCode: "+91",
+        phoneNumber: "9876543210",
+        profilePictureBase64: "",
+        profileCompleted: true,
+        updatedAt: serverTs(),
+      },
+      { merge: true }
+    )
+  );
+
+  // Cannot elevate subscriptionStatus or role via merge
+  await assertFails(
+    webDb.collection("users").doc(webUid).set(
+      {
+        subscriptionStatus: "Lifetime",
+        updatedAt: serverTs(),
+      },
+      { merge: true }
+    )
+  );
+  await assertFails(
+    webDb.collection("users").doc(webUid).set(
+      {
+        role: "Admin",
+        updatedAt: serverTs(),
+      },
+      { merge: true }
+    )
+  );
+});
+
