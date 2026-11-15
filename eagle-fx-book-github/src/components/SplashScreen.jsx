@@ -1,45 +1,68 @@
-import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { useEffect, useRef, useState } from "react";
 
 export default function SplashScreen({ authReady, onComplete }) {
   const [progress, setProgress] = useState(0);
   const [minTimeDone, setMinTimeDone] = useState(false);
+  const completedRef = useRef(false);
+
+  const triggerComplete = () => {
+    if (completedRef.current) return;
+    completedRef.current = true;
+    try {
+      if (
+        window.Capacitor &&
+        window.Capacitor.Plugins &&
+        window.Capacitor.Plugins.SplashScreen &&
+        typeof window.Capacitor.Plugins.SplashScreen.hide === "function"
+      ) {
+        window.Capacitor.Plugins.SplashScreen.hide();
+      }
+    } catch {
+      // ignore
+    }
+    onComplete();
+  };
 
   useEffect(() => {
-    const start = performance.now();
-    const duration = 2000;
-    let rafId = 0;
+    const start = Date.now();
+    const duration = 1400;
 
-    const tick = (now) => {
-      const elapsed = now - start;
+    const timer = window.setInterval(() => {
+      const elapsed = Date.now() - start;
       const pct = Math.min(100, Math.round((elapsed / duration) * 100));
       setProgress(pct);
-      if (elapsed < duration) {
-        rafId = window.requestAnimationFrame(tick);
-      } else {
+      if (elapsed >= duration) {
+        window.clearInterval(timer);
         setMinTimeDone(true);
       }
-    };
+    }, 50);
 
-    rafId = window.requestAnimationFrame(tick);
-    return () => window.cancelAnimationFrame(rafId);
+    // Hard guarantee so splash can never stay stuck on slow/old WebView
+    const safetyTimer = window.setTimeout(() => {
+      triggerComplete();
+    }, 2800);
+
+    return () => {
+      window.clearInterval(timer);
+      window.clearTimeout(safetyTimer);
+    };
   }, []);
 
   useEffect(() => {
     if (minTimeDone && authReady) {
-      const t = window.setTimeout(() => onComplete(), 180);
+      const t = window.setTimeout(() => triggerComplete(), 120);
       return () => window.clearTimeout(t);
     }
-  }, [minTimeDone, authReady, onComplete]);
+  }, [minTimeDone, authReady]);
 
   return (
-    <motion.div
-      initial={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.35, ease: "easeOut" }}
+    <div
       style={{
         position: "fixed",
-        inset: 0,
+        top: 0,
+        right: 0,
+        bottom: 0,
+        left: 0,
         zIndex: 9999,
         backgroundColor: "#050505",
         display: "flex",
@@ -49,10 +72,7 @@ export default function SplashScreen({ authReady, onComplete }) {
         padding: "32px"
       }}
     >
-      <motion.div
-        initial={{ opacity: 0, scale: 0.86 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.55, ease: "easeOut" }}
+      <div
         style={{
           position: "relative",
           display: "flex",
@@ -75,12 +95,16 @@ export default function SplashScreen({ authReady, onComplete }) {
               "0 0 64px rgba(225, 29, 46, 0.32), 0 18px 36px rgba(0, 0, 0, 0.7)",
             border: "1px solid rgba(225, 29, 46, 0.38)",
             overflow: "hidden",
-            marginBottom: "22px"
+            marginBottom: "22px",
+            backgroundColor: "#0d0d10"
           }}
         >
           <img
             src="logo.png"
             alt="Eagle FX Book"
+            onError={(e) => {
+              e.currentTarget.style.display = "none";
+            }}
             style={{ width: "100%", height: "100%", objectFit: "cover" }}
           />
         </div>
@@ -98,7 +122,6 @@ export default function SplashScreen({ authReady, onComplete }) {
           EAGLE FX BOOK
         </h1>
 
-        {/* Slim Red Progress Bar + % */}
         <div style={{ width: "100%", marginBottom: "10px" }}>
           <div
             style={{
@@ -152,7 +175,7 @@ export default function SplashScreen({ authReady, onComplete }) {
         >
           Trade. Journal. Improve.
         </p>
-      </motion.div>
-    </motion.div>
+      </div>
+    </div>
   );
 }

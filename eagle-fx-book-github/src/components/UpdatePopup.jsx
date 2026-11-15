@@ -52,7 +52,10 @@ export default function UpdatePopup() {
       aria-label="New update available"
       style={{
         position: "fixed",
-        inset: 0,
+        top: 0,
+        right: 0,
+        bottom: 0,
+        left: 0,
         zIndex: 1100,
         backgroundColor: "var(--modal-backdrop)",
         backdropFilter: "blur(8px)",

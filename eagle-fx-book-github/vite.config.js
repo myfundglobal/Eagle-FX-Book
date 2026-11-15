@@ -11,6 +11,15 @@ const base = process.env.VITE_BASE || "/";
 
 export default defineConfig({
   base,
+  build: {
+    target: "es2019",
+    cssTarget: "chrome79"
+  },
+  optimizeDeps: {
+    esbuildOptions: {
+      target: "es2019"
+    }
+  },
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version)
   },

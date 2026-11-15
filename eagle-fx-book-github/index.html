@@ -18,9 +18,187 @@
     <link rel="icon" type="image/png" sizes="192x192" href="pwa-192x192.png" />
     <link rel="apple-touch-icon" href="apple-touch-icon.png" />
     <title>Eagle FX Book</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        background-color: #050505;
+        color: #f5f5f7;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      }
+      #efx-boot-loader {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        text-align: center;
+        background-color: #050505;
+        color: #f5f5f7;
+        box-sizing: border-box;
+      }
+      .efx-spinner {
+        width: 36px;
+        height: 36px;
+        border: 3px solid #23232a;
+        border-top-color: #e11d2e;
+        border-radius: 50%;
+        animation: efxSpin 0.85s linear infinite;
+        margin-bottom: 14px;
+      }
+      @keyframes efxSpin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      .efx-fallback-card {
+        width: 100%;
+        max-width: 360px;
+        background-color: #0d0d10;
+        border: 1px solid #23232a;
+        border-radius: 18px;
+        padding: 22px 18px;
+        box-sizing: border-box;
+      }
+      .efx-retry-btn {
+        width: 100%;
+        min-height: 44px;
+        border: none;
+        border-radius: 12px;
+        background-color: #e11d2e;
+        color: #ffffff;
+        font-size: 14px;
+        font-weight: 700;
+        cursor: pointer;
+        margin-top: 14px;
+      }
+    </style>
+    <script>
+      (function () {
+        window.__EAGLE_MOUNTED__ = false;
+        var pendingFallback = null;
+
+        function escapeHtml(str) {
+          return String(str || "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;");
+        }
+
+        function hideNativeSplash() {
+          try {
+            if (
+              window.Capacitor &&
+              window.Capacitor.Plugins &&
+              window.Capacitor.Plugins.SplashScreen &&
+              typeof window.Capacitor.Plugins.SplashScreen.hide === "function"
+            ) {
+              window.Capacitor.Plugins.SplashScreen.hide();
+            }
+          } catch (e) {}
+        }
+
+        function renderFallback(title, detail) {
+          hideNativeSplash();
+          var container = document.getElementById("root") || document.body;
+          if (!container) {
+            pendingFallback = { title: title, detail: detail };
+            return;
+          }
+          var shortDetail = String(detail || "").slice(0, 220);
+          container.innerHTML =
+            '<div id="efx-boot-loader">' +
+            '<div class="efx-fallback-card">' +
+            '<h2 style="margin:0 0 8px 0;font-size:18px;color:#f5f5f7;">' +
+            escapeHtml(title) +
+            "</h2>" +
+            (shortDetail
+              ? '<p style="margin:0;font-size:13px;line-height:1.5;color:#8b8b95;word-break:break-word;">' +
+                escapeHtml(shortDetail) +
+                "</p>"
+              : "") +
+            '<button type="button" class="efx-retry-btn" onclick="window.location.reload()">Retry</button>' +
+            "</div>" +
+            "</div>";
+        }
+
+        window.__SHOW_EAGLE_FALLBACK__ = renderFallback;
+
+        document.addEventListener("DOMContentLoaded", function () {
+          if (pendingFallback && !window.__EAGLE_MOUNTED__) {
+            renderFallback(pendingFallback.title, pendingFallback.detail);
+            pendingFallback = null;
+          } else if (typeof navigator !== "undefined" && navigator.onLine === false && !window.__EAGLE_MOUNTED__) {
+            renderFallback(
+              "No internet connection",
+              "Please connect to the internet and tap Retry to open Eagle FX Book."
+            );
+          }
+        });
+
+        window.onerror = function (message, _source, _lineno, _colno, error) {
+          if (!window.__EAGLE_MOUNTED__) {
+            var text = (error && error.message) || message || "Failed to initialize app.";
+            renderFallback("Something went wrong", text);
+          }
+        };
+
+        window.addEventListener(
+          "error",
+          function (event) {
+            if (window.__EAGLE_MOUNTED__) return;
+            var target = event && event.target;
+            if (target && target.tagName === "SCRIPT") {
+              var offline = typeof navigator !== "undefined" && navigator.onLine === false;
+              renderFallback(
+                offline ? "No internet connection" : "Something went wrong",
+                offline
+                  ? "Please connect to the internet and tap Retry."
+                  : "Could not load application bundle."
+              );
+            }
+          },
+          true
+        );
+
+        window.addEventListener("unhandledrejection", function (event) {
+          if (!window.__EAGLE_MOUNTED__) {
+            var reason = event && event.reason;
+            var text = (reason && reason.message) || String(reason || "Startup error");
+            renderFallback("Something went wrong", text);
+          }
+        });
+
+        window.setTimeout(function () {
+          if (!window.__EAGLE_MOUNTED__) {
+            if (typeof navigator !== "undefined" && navigator.onLine === false) {
+              renderFallback(
+                "No internet connection",
+                "Please connect to the internet and tap Retry."
+              );
+            } else {
+              renderFallback(
+                "Something went wrong",
+                "The app took too long to load. Please tap Retry."
+              );
+            }
+          }
+        }, 12000);
+      })();
+    </script>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div id="efx-boot-loader">
+        <div class="efx-spinner" aria-hidden="true"></div>
+        <div style="font-size: 14px; font-weight: 700; letter-spacing: 0.4px;">
+          Loading Eagle FX Book...
+        </div>
+      </div>
+    </div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

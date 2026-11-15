@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AnimatePresence } from "framer-motion";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import {
   Timestamp,
@@ -95,7 +94,10 @@ export default function App() {
   const [activeTab, setActiveTab] = useState("home");
   const [communitySubTab, setCommunitySubTab] = useState("posts");
   const [routeBusy, setRouteBusy] = useState(false);
-  const [isOnline, setIsOnline] = useState(() => navigator.onLine);
+  const [isOnline, setIsOnline] = useState(() =>
+    typeof navigator !== "undefined" ? navigator.onLine !== false : true
+  );
+  const handleSplashComplete = useCallback(() => setSplashDone(true), []);
 
   // Day/Night Theme + Timezone
   const [theme, setTheme] = useState(getInitialTheme);
@@ -217,6 +219,16 @@ export default function App() {
     return () => {
       window.removeEventListener("online", onUp);
       window.removeEventListener("offline", onDown);
+    };
+  }, []);
+
+  // Auth + splash safety timeouts so WebView never stays stuck on black screen
+  useEffect(() => {
+    const authTimer = window.setTimeout(() => setAuthReady(true), 1800);
+    const splashTimer = window.setTimeout(() => setSplashDone(true), 2900);
+    return () => {
+      window.clearTimeout(authTimer);
+      window.clearTimeout(splashTimer);
     };
   }, []);
 
@@ -886,11 +898,9 @@ export default function App() {
       <UpdatePopup />
       <TopLoadingBar active={routeBusy} />
 
-      <AnimatePresence>
-        {!splashDone && (
-          <SplashScreen authReady={authReady} onComplete={() => setSplashDone(true)} />
-        )}
-      </AnimatePresence>
+      {!splashDone && (
+        <SplashScreen authReady={authReady} onComplete={handleSplashComplete} />
+      )}
 
       {!isOnline && (
         <div
@@ -904,16 +914,69 @@ export default function App() {
             fontSize: "12px",
             display: "flex",
             alignItems: "center",
-            justifyContent: "center",
-            gap: "8px"
+            justifyContent: "space-between",
+            gap: "10px"
           }}
         >
-          <WifiOff size={14} strokeWidth={1.75} />
-          <span>You are offline. Cached views remain available.</span>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <WifiOff size={14} strokeWidth={1.75} />
+            <span>No internet connection</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            style={{
+              backgroundColor: "rgba(255,255,255,0.18)",
+              color: "#FFFFFF",
+              border: "1px solid rgba(255,255,255,0.35)",
+              borderRadius: "8px",
+              padding: "4px 10px",
+              fontSize: "11px",
+              fontWeight: 700,
+              cursor: "pointer"
+            }}
+          >
+            Retry
+          </button>
         </div>
       )}
 
-      {!user ? (
+      {!user && !isOnline ? (
+        <div
+          style={{
+            minHeight: "100vh",
+            backgroundColor: "var(--bg)",
+            color: "var(--text)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "24px"
+          }}
+        >
+          <div className="pro-card" style={{ maxWidth: "380px", width: "100%", textAlign: "center" }}>
+            <WifiOff
+              size={34}
+              strokeWidth={1.75}
+              color="var(--primary)"
+              style={{ marginBottom: "12px" }}
+            />
+            <h2 style={{ margin: "0 0 8px 0", fontSize: "18px", color: "var(--text)" }}>
+              No internet connection
+            </h2>
+            <p style={{ margin: "0 0 16px 0", fontSize: "13px", color: "var(--muted)", lineHeight: 1.5 }}>
+              Please connect to Wi-Fi or mobile data to sign in and sync your Eagle FX Book account.
+            </p>
+            <button
+              type="button"
+              className="btn-red"
+              style={{ width: "100%" }}
+              onClick={() => window.location.reload()}
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      ) : !user ? (
         <AuthScreen />
       ) : (
         <div className="app-shell">

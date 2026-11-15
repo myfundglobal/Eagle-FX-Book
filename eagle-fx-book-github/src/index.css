@@ -81,6 +81,7 @@ select {
 }
 
 .app-shell {
+  min-height: 100vh;
   min-height: 100dvh;
   max-width: 440px;
   margin: 0 auto;

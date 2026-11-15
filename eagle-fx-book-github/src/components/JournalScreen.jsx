@@ -563,7 +563,10 @@ export default function JournalScreen({
         <div
           style={{
             position: "fixed",
-            inset: 0,
+            top: 0,
+            right: 0,
+            bottom: 0,
+            left: 0,
             zIndex: 850,
             backgroundColor: "var(--modal-backdrop)",
             backdropFilter: "blur(6px)",

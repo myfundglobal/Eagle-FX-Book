@@ -121,7 +121,10 @@ export default function AdminDeskModal({
     <div
       style={{
         position: "fixed",
-        inset: 0,
+        top: 0,
+        right: 0,
+        bottom: 0,
+        left: 0,
         zIndex: 950,
         backgroundColor: "var(--modal-backdrop)",
         backdropFilter: "blur(8px)",
@@ -131,7 +134,7 @@ export default function AdminDeskModal({
         padding: "10px"
       }}
     >
-      <div className="pro-card" style={{ width: "100%", maxWidth: "430px", maxHeight: "92dvh", overflowY: "auto" }}>
+      <div className="pro-card" style={{ width: "100%", maxWidth: "430px", maxHeight: "92vh", overflowY: "auto" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <ShieldCheck size={18} strokeWidth={1.75} color="var(--primary)" />

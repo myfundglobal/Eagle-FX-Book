@@ -355,7 +355,10 @@ export default function StoreScreen({
         <div
           style={{
             position: "fixed",
-            inset: 0,
+            top: 0,
+            right: 0,
+            bottom: 0,
+            left: 0,
             zIndex: 920,
             backgroundColor: "var(--modal-backdrop)",
             backdropFilter: "blur(8px)",
@@ -365,7 +368,7 @@ export default function StoreScreen({
             padding: "12px"
           }}
         >
-          <div className="pro-card" style={{ width: "100%", maxWidth: "430px", maxHeight: "90dvh", overflowY: "auto" }}>
+          <div className="pro-card" style={{ width: "100%", maxWidth: "430px", maxHeight: "90vh", overflowY: "auto" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
               <div>
                 <h3 style={{ margin: 0, fontSize: "16px", color: "var(--text)" }}>
