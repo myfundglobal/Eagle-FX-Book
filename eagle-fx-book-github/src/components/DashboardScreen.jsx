@@ -20,8 +20,9 @@ import {
 } from "lucide-react";
 import { computeDashboardStats } from "../utils/analytics.js";
 import { formatCompactPnl, formatPnl } from "../utils/formatters.js";
+import PlanSummaryCard from "./PlanSummaryCard.jsx";
 
-const APP_VERSION = typeof __APP_VERSION__ !== "undefined" ? __APP_VERSION__ : "1.1.0";
+const APP_VERSION = typeof __APP_VERSION__ !== "undefined" ? __APP_VERSION__ : "1.1.4";
 const RANGES = ["1W", "1M", "3M", "ALL"];
 
 function CountUpPnl({ value }) {
@@ -42,7 +43,7 @@ function CountUpPnl({ value }) {
   }, [value, shouldReduceMotion]);
 
   const isNeg = value < 0;
-  const color = value === 0 ? "#F5F5F7" : isNeg ? "#FF5C5C" : "#22C55E";
+  const color = value === 0 ? "var(--text)" : isNeg ? "var(--loss)" : "var(--profit)";
 
   return (
     <span
@@ -57,7 +58,7 @@ function CountUpPnl({ value }) {
         letterSpacing: "-0.8px"
       }}
     >
-      {isNeg && <ArrowDownRight size={24} strokeWidth={2.2} color="#FF5C5C" />}
+      {isNeg && <ArrowDownRight size={24} strokeWidth={2.2} color="var(--loss)" />}
       {formatPnl(display)}
     </span>
   );
@@ -76,9 +77,11 @@ export default function DashboardScreen({
   trades,
   loading,
   nextCatalyst,
+  planInfo,
   onAddTrade,
   onViewAllJournal,
-  onOpenNews
+  onOpenNews,
+  onOpenStore
 }) {
   const [range, setRange] = useState("ALL");
   const [nowMillis, setNowMillis] = useState(Date.now());
@@ -112,7 +115,7 @@ export default function DashboardScreen({
           { name: "Wins", value: stats.winsCount, color: "#22C55E" },
           { name: "Losses", value: Math.max(0, stats.totalTrades - stats.winsCount), color: "#FF5C5C" }
         ]
-      : [{ name: "Empty", value: 1, color: "#23232A" }];
+      : [{ name: "Empty", value: 1, color: "#787885" }];
 
   const rewardRatioPct =
     stats.avgRR > 0 ? Math.min(100, Math.round((stats.avgRR / (1 + stats.avgRR)) * 100)) : 50;
@@ -124,6 +127,11 @@ export default function DashboardScreen({
       transition={{ duration: 0.25 }}
       style={{ display: "flex", flexDirection: "column", gap: "14px" }}
     >
+      {/* Plan Status Card (with 7d / 1d renewal warning) */}
+      {planInfo && (
+        <PlanSummaryCard planInfo={planInfo} onRenew={onOpenStore} compact />
+      )}
+
       {/* 1. Hero Net Realized P&L + Equity Curve */}
       <div className="pro-card">
         <div
@@ -134,7 +142,7 @@ export default function DashboardScreen({
             marginBottom: "6px"
           }}
         >
-          <span style={{ fontSize: "12px", color: "#8B8B95", fontWeight: 600 }}>
+          <span style={{ fontSize: "12px", color: "var(--muted)", fontWeight: 600 }}>
             NET REALIZED P&amp;L
           </span>
           <div style={{ display: "flex", gap: "6px" }}>
@@ -167,9 +175,9 @@ export default function DashboardScreen({
                   fontSize: "11px",
                   fontWeight: 700,
                   cursor: "pointer",
-                  border: active ? "1px solid #E11D2E" : "1px solid #23232A",
-                  backgroundColor: active ? "rgba(225, 29, 46, 0.16)" : "#141418",
-                  color: active ? "#FF2D3D" : "#8B8B95"
+                  border: active ? "1px solid var(--primary)" : "1px solid var(--border)",
+                  backgroundColor: active ? "rgba(225, 29, 46, 0.16)" : "var(--surface-2)",
+                  color: active ? "var(--primary)" : "var(--muted)"
                 }}
               >
                 {r}
@@ -191,11 +199,11 @@ export default function DashboardScreen({
                 </defs>
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: "#141418",
-                    border: "1px solid #23232A",
+                    backgroundColor: "var(--surface)",
+                    border: "1px solid var(--border)",
                     borderRadius: "10px",
                     fontSize: "12px",
-                    color: "#F5F5F7"
+                    color: "var(--text)"
                   }}
                   formatter={(v) => [formatPnl(v), "Equity"]}
                 />
@@ -213,17 +221,17 @@ export default function DashboardScreen({
               style={{
                 height: "100%",
                 borderRadius: "14px",
-                backgroundColor: "#141418",
-                border: "1px dashed #23232A",
+                backgroundColor: "var(--surface-2)",
+                border: "1px dashed var(--border)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 gap: "8px",
-                color: "#8B8B95",
+                color: "var(--muted)",
                 fontSize: "12px"
               }}
             >
-              <TrendingUp size={16} strokeWidth={1.75} color="#E11D2E" />
+              <TrendingUp size={16} strokeWidth={1.75} color="var(--primary)" />
               <span>Log at least 2 trades to render equity curve</span>
             </div>
           )}
@@ -243,7 +251,7 @@ export default function DashboardScreen({
       {/* 2. Row of 2 Cards: Win Rate Donut & Avg Risk:Reward */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
         <div className="pro-card-flat">
-          <div style={{ fontSize: "11px", color: "#8B8B95", fontWeight: 700, marginBottom: "6px" }}>
+          <div style={{ fontSize: "11px", color: "var(--muted)", fontWeight: 700, marginBottom: "6px" }}>
             WIN RATE
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
@@ -265,10 +273,10 @@ export default function DashboardScreen({
               </ResponsiveContainer>
             </div>
             <div>
-              <div className="font-mono-num" style={{ fontSize: "20px", fontWeight: 800, color: "#F5F5F7" }}>
+              <div className="font-mono-num" style={{ fontSize: "20px", fontWeight: 800, color: "var(--text)" }}>
                 {stats.winRate.toFixed(0)}%
               </div>
-              <div className="font-mono-num" style={{ fontSize: "11px", color: "#8B8B95" }}>
+              <div className="font-mono-num" style={{ fontSize: "11px", color: "var(--muted)" }}>
                 {stats.winsCount}W / {stats.lossesCount}L
               </div>
             </div>
@@ -277,10 +285,10 @@ export default function DashboardScreen({
 
         <div className="pro-card-flat" style={{ display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
           <div>
-            <div style={{ fontSize: "11px", color: "#8B8B95", fontWeight: 700, marginBottom: "6px" }}>
+            <div style={{ fontSize: "11px", color: "var(--muted)", fontWeight: 700, marginBottom: "6px" }}>
               AVG RISK : REWARD
             </div>
-            <div className="font-mono-num" style={{ fontSize: "20px", fontWeight: 800, color: "#F5F5F7" }}>
+            <div className="font-mono-num" style={{ fontSize: "20px", fontWeight: 800, color: "var(--text)" }}>
               1 : {stats.avgRR.toFixed(2)}
             </div>
           </div>
@@ -290,14 +298,14 @@ export default function DashboardScreen({
                 width: "100%",
                 height: "8px",
                 borderRadius: "999px",
-                backgroundColor: "#23232A",
+                backgroundColor: "var(--border)",
                 overflow: "hidden",
                 display: "flex",
                 marginTop: "10px"
               }}
             >
-              <div style={{ width: `${100 - rewardRatioPct}%`, backgroundColor: "#FF5C5C" }} />
-              <div style={{ width: `${rewardRatioPct}%`, backgroundColor: "#22C55E" }} />
+              <div style={{ width: `${100 - rewardRatioPct}%`, backgroundColor: "var(--loss)" }} />
+              <div style={{ width: `${rewardRatioPct}%`, backgroundColor: "var(--profit)" }} />
             </div>
             <div
               className="font-mono-num"
@@ -305,7 +313,7 @@ export default function DashboardScreen({
                 display: "flex",
                 justifyContent: "space-between",
                 fontSize: "10px",
-                color: "#8B8B95",
+                color: "var(--muted)",
                 marginTop: "5px"
               }}
             >
@@ -318,17 +326,16 @@ export default function DashboardScreen({
 
       {/* 3. KPI Grid (2x3) */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
-        <KpiCell label="TODAY'S P&L" value={stats.todayPnl} isPnl />
-        <KpiCell label="THIS WEEK P&L" value={stats.weekPnl} isPnl />
-        <KpiCell label="BEST TRADE" value={stats.bestTrade} isPnl />
-        <KpiCell label="WORST TRADE" value={stats.worstTrade} isPnl />
+        <KpiCell label="TODAY'S P&L" value={stats.todayPnl} />
+        <KpiCell label="THIS WEEK P&L" value={stats.weekPnl} />
+        <KpiCell label="BEST TRADE" value={stats.bestTrade} />
+        <KpiCell label="WORST TRADE" value={stats.worstTrade} />
         <KpiCell
           label="MAX DRAWDOWN"
           value={stats.maxDrawdown > 0 ? -stats.maxDrawdown : 0}
-          isPnl
         />
         <div className="pro-card-flat" style={{ padding: "12px 14px" }}>
-          <div style={{ fontSize: "10px", color: "#8B8B95", fontWeight: 700, marginBottom: "6px" }}>
+          <div style={{ fontSize: "10px", color: "var(--muted)", fontWeight: 700, marginBottom: "6px" }}>
             EXPECTANCY (AVG R)
           </div>
           <div
@@ -336,7 +343,7 @@ export default function DashboardScreen({
             style={{
               fontSize: "16px",
               fontWeight: 700,
-              color: stats.expectancyR >= 0 ? "#22C55E" : "#FF5C5C",
+              color: stats.expectancyR >= 0 ? "var(--profit)" : "var(--loss)",
               display: "flex",
               alignItems: "center",
               gap: "4px"
@@ -353,12 +360,12 @@ export default function DashboardScreen({
       <div className="pro-card" onClick={onOpenNews} style={{ cursor: "pointer" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <BellRing size={15} strokeWidth={1.75} color="#E11D2E" />
-            <span style={{ fontSize: "11px", fontWeight: 700, color: "#E11D2E", letterSpacing: "0.7px" }}>
+            <BellRing size={15} strokeWidth={1.75} color="var(--primary)" />
+            <span style={{ fontSize: "11px", fontWeight: 700, color: "var(--primary)", letterSpacing: "0.7px" }}>
               NEXT HIGH-IMPACT CATALYST
             </span>
           </div>
-          <ChevronRight size={16} strokeWidth={1.75} color="#8B8B95" />
+          <ChevronRight size={16} strokeWidth={1.75} color="var(--muted)" />
         </div>
 
         {nextCatalyst ? (
@@ -373,28 +380,28 @@ export default function DashboardScreen({
                     padding: "2px 8px",
                     borderRadius: "6px",
                     backgroundColor: "rgba(225, 29, 46, 0.16)",
-                    color: "#FF2D3D"
+                    color: "var(--primary)"
                   }}
                 >
                   {nextCatalyst.currency}
                 </span>
-                <span style={{ fontSize: "14px", fontWeight: 700, color: "#F5F5F7" }}>
+                <span style={{ fontSize: "14px", fontWeight: 700, color: "var(--text)" }}>
                   {nextCatalyst.event}
                 </span>
               </div>
-              <div style={{ fontSize: "11px", color: "#8B8B95" }}>
-                Forecast: {nextCatalyst.forecast || "-"} • Prev: {nextCatalyst.previous || "-"}
+              <div style={{ fontSize: "11px", color: "var(--muted)" }}>
+                Forecast: {nextCatalyst.forecast || "-"} &bull; Prev: {nextCatalyst.previous || "-"}
               </div>
             </div>
             <div style={{ textAlign: "right", flexShrink: 0 }}>
-              <div style={{ fontSize: "10px", color: "#8B8B95", marginBottom: "2px" }}>IN</div>
-              <div className="font-mono-num" style={{ fontSize: "15px", fontWeight: 800, color: "#F5B301" }}>
+              <div style={{ fontSize: "10px", color: "var(--muted)", marginBottom: "2px" }}>IN</div>
+              <div className="font-mono-num" style={{ fontSize: "15px", fontWeight: 800, color: "var(--warning)" }}>
                 {formatCountdown(nextCatalyst.timestampMillis, nowMillis)}
               </div>
             </div>
           </div>
         ) : (
-          <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", color: "#8B8B95" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", color: "var(--muted)" }}>
             <CalendarClock size={16} strokeWidth={1.75} />
             <span>No upcoming high-impact releases remaining today.</span>
           </div>
@@ -404,7 +411,7 @@ export default function DashboardScreen({
       {/* 5. Recent Executions */}
       <div className="pro-card-flat">
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-          <h3 style={{ margin: 0, fontSize: "14px", fontWeight: 700, color: "#F5F5F7" }}>
+          <h3 style={{ margin: 0, fontSize: "14px", fontWeight: 700, color: "var(--text)" }}>
             Recent Executions
           </h3>
           <button
@@ -413,7 +420,7 @@ export default function DashboardScreen({
             style={{
               background: "transparent",
               border: "none",
-              color: "#E11D2E",
+              color: "var(--primary)",
               fontSize: "12px",
               fontWeight: 700,
               cursor: "pointer"
@@ -425,7 +432,7 @@ export default function DashboardScreen({
 
         {recentTrades.length === 0 ? (
           <div style={{ textAlign: "center", padding: "20px 8px" }}>
-            <p style={{ margin: "0 0 12px 0", fontSize: "13px", color: "#8B8B95" }}>
+            <p style={{ margin: "0 0 12px 0", fontSize: "13px", color: "var(--muted)" }}>
               No trades logged yet. Start building your edge today.
             </p>
             <button type="button" className="btn-red" onClick={onAddTrade}>
@@ -448,8 +455,8 @@ export default function DashboardScreen({
                     justifyContent: "space-between",
                     padding: "10px 12px",
                     borderRadius: "14px",
-                    backgroundColor: "#141418",
-                    border: "1px solid #23232A"
+                    backgroundColor: "var(--surface-2)",
+                    border: "1px solid var(--border)"
                   }}
                 >
                   <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
@@ -460,17 +467,17 @@ export default function DashboardScreen({
                         padding: "4px 8px",
                         borderRadius: "8px",
                         backgroundColor: isBuy ? "rgba(34,197,94,0.14)" : "rgba(255,92,92,0.14)",
-                        color: isBuy ? "#22C55E" : "#FF5C5C"
+                        color: isBuy ? "var(--profit)" : "var(--loss)"
                       }}
                     >
                       {isBuy ? "BUY" : "SELL"}
                     </span>
                     <div>
-                      <div style={{ fontSize: "14px", fontWeight: 700, color: "#F5F5F7" }}>
+                      <div style={{ fontSize: "14px", fontWeight: 700, color: "var(--text)" }}>
                         {trade.pair}
                       </div>
-                      <div className="font-mono-num" style={{ fontSize: "11px", color: "#8B8B95" }}>
-                        {trade.date?.replace("T", " ")} • {trade.lotSize} lots
+                      <div className="font-mono-num" style={{ fontSize: "11px", color: "var(--muted)" }}>
+                        {trade.date?.replace("T", " ")} &bull; {trade.lotSize} lots
                       </div>
                     </div>
                   </div>
@@ -479,7 +486,7 @@ export default function DashboardScreen({
                     style={{
                       fontSize: "14px",
                       fontWeight: 700,
-                      color: pnl === 0 ? "#8B8B95" : isNeg ? "#FF5C5C" : "#22C55E",
+                      color: pnl === 0 ? "var(--muted)" : isNeg ? "var(--loss)" : "var(--profit)",
                       display: "flex",
                       alignItems: "center",
                       gap: "4px"
@@ -502,9 +509,9 @@ export default function DashboardScreen({
       {/* App Version */}
       <p
         className="font-mono-num"
-        style={{ margin: "4px 0 0 0", textAlign: "center", fontSize: "11px", color: "#5e5e68" }}
+        style={{ margin: "4px 0 0 0", textAlign: "center", fontSize: "11px", color: "var(--muted-soft)" }}
       >
-        Eagle FX Book • v{APP_VERSION}
+        Eagle FX Book &bull; v{APP_VERSION}
       </p>
     </motion.div>
   );
@@ -513,10 +520,10 @@ export default function DashboardScreen({
 function KpiCell({ label, value }) {
   const num = Number(value) || 0;
   const isNeg = num < 0;
-  const color = num === 0 ? "#F5F5F7" : isNeg ? "#FF5C5C" : "#22C55E";
+  const color = num === 0 ? "var(--text)" : isNeg ? "var(--loss)" : "var(--profit)";
   return (
     <div className="pro-card-flat" style={{ padding: "12px 14px" }}>
-      <div style={{ fontSize: "10px", color: "#8B8B95", fontWeight: 700, marginBottom: "6px" }}>
+      <div style={{ fontSize: "10px", color: "var(--muted)", fontWeight: 700, marginBottom: "6px" }}>
         {label}
       </div>
       <div
@@ -541,9 +548,9 @@ const chipStyle = {
   fontSize: "11px",
   padding: "4px 9px",
   borderRadius: "999px",
-  backgroundColor: "#141418",
-  border: "1px solid #23232A",
-  color: "#F5F5F7",
+  backgroundColor: "var(--surface-2)",
+  border: "1px solid var(--border)",
+  color: "var(--text)",
   fontWeight: 600
 };
 
@@ -553,6 +560,6 @@ const chipRedStyle = {
   borderRadius: "999px",
   backgroundColor: "rgba(225, 29, 46, 0.14)",
   border: "1px solid rgba(225, 29, 46, 0.32)",
-  color: "#FF2D3D",
+  color: "var(--primary)",
   fontWeight: 700
 };

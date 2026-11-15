@@ -1,3 +1,6 @@
+import { CALENDAR_API_URL, DEFAULT_APPS_SCRIPT_FALLBACK_URLS } from "../config.js";
+import { buildEventId, getDayKeyInTimeZone } from "./calendarData.js";
+
 export function formatPnl(value) {
   const num = Number(value) || 0;
   const abs = Math.abs(num).toLocaleString("en-US", {
@@ -84,81 +87,209 @@ export async function compressImageToBase64(file, maxDim = 720, quality = 0.72) 
   });
 }
 
+const CALENDAR_CACHE_KEY = "eagle_fx_calendar_cache_v1";
+
 export const FALLBACK_NEWS_EVENTS = [
   {
-    id: "ff-1",
+    id: "USD_fallback_us_core_cpi",
     currency: "USD",
-    event: "US Core CPI m/m",
+    event: "Core CPI m/m",
     impact: "High",
+    actual: "",
     forecast: "0.3%",
     previous: "0.3%",
+    timeMode: "time",
     timestampMillis: Date.now() + 2 * 3600 * 1000
   },
   {
-    id: "ff-2",
+    id: "EUR_fallback_ecb_statement",
     currency: "EUR",
     event: "ECB Monetary Policy Statement",
     impact: "High",
+    actual: "",
     forecast: "3.25%",
     previous: "3.25%",
+    timeMode: "time",
     timestampMillis: Date.now() + 5 * 3600 * 1000
   },
   {
-    id: "ff-3",
+    id: "GBP_fallback_boe_rate",
     currency: "GBP",
     event: "BOE Interest Rate Decision",
     impact: "High",
+    actual: "",
     forecast: "4.75%",
     previous: "4.75%",
+    timeMode: "time",
     timestampMillis: Date.now() + 18 * 3600 * 1000
   },
   {
-    id: "ff-4",
+    id: "USD_fallback_fomc_presser",
     currency: "USD",
     event: "FOMC Press Conference",
     impact: "High",
+    actual: "",
     forecast: "-",
     previous: "-",
+    timeMode: "time",
     timestampMillis: Date.now() + 26 * 3600 * 1000
   },
   {
-    id: "ff-5",
+    id: "JPY_fallback_boj_cpi",
     currency: "JPY",
     event: "BOJ Core CPI y/y",
     impact: "Medium",
+    actual: "",
     forecast: "2.1%",
     previous: "2.0%",
+    timeMode: "time",
     timestampMillis: Date.now() + 30 * 3600 * 1000
   }
 ];
 
+function normalizeFeedItem(item, idx) {
+  const rawDate = String(item?.date || "").trim();
+  const rawTime = String(item?.time || "").trim().toLowerCase();
+  const lowerDate = rawDate.toLowerCase();
+
+  let timeMode = "time";
+  if (rawTime.includes("all day") || lowerDate.includes("all day")) {
+    timeMode = "allday";
+  } else if (rawTime.includes("tentative") || lowerDate.includes("tentative")) {
+    timeMode = "tentative";
+  }
+
+  let ts = Date.parse(rawDate);
+  if (Number.isNaN(ts)) {
+    ts = Date.now() + idx * 3600 * 1000;
+    if (timeMode === "time") timeMode = "tentative";
+  } else if (rawDate.length <= 10) {
+    timeMode = "allday";
+  }
+
+  const currency = String(item?.country || item?.currency || "USD").trim().toUpperCase() || "USD";
+  const title = String(item?.title || item?.event || "Macro Release").trim();
+  const impactRaw = String(item?.impact || "Low").trim();
+  const impact = ["High", "Medium", "Low", "Holiday"].includes(impactRaw)
+    ? impactRaw
+    : impactRaw.toLowerCase().includes("non")
+      ? "Holiday"
+      : "Low";
+
+  const dayKeyUtc = getDayKeyInTimeZone(ts, "UTC");
+  const id = buildEventId(currency, dayKeyUtc, title);
+
+  return {
+    id,
+    currency,
+    event: title,
+    impact,
+    actual: String(item?.actual || "").trim(),
+    forecast: String(item?.forecast || "").trim() || "-",
+    previous: String(item?.previous || "").trim() || "-",
+    timeMode,
+    rawDate,
+    timestampMillis: ts
+  };
+}
+
+function mergeNormalizedEvents(rawArrays) {
+  const seen = new Map();
+  let counter = 0;
+  for (const list of rawArrays) {
+    if (!Array.isArray(list)) continue;
+    for (const item of list) {
+      const normalized = normalizeFeedItem(item, counter++);
+      const key = `${normalized.id}_${normalized.timestampMillis}`;
+      const existing = seen.get(key);
+      if (!existing || (!existing.actual && normalized.actual)) {
+        seen.set(key, normalized);
+      }
+    }
+  }
+  return Array.from(seen.values()).sort((a, b) => a.timestampMillis - b.timestampMillis);
+}
+
+async function fetchJsonWithTimeout(url, timeoutMs = 8000) {
+  const controller = new AbortController();
+  const timer = window.setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, { signal: controller.signal });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } finally {
+    window.clearTimeout(timer);
+  }
+}
+
 export async function fetchLiveEconomicCalendar() {
   try {
-    const controller = new AbortController();
-    const timer = window.setTimeout(() => controller.abort(), 7000);
-    const res = await fetch("https://nfs.faireconomy.media/ff_calendar_thisweek.json", {
-      signal: controller.signal
-    });
-    window.clearTimeout(timer);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    if (!Array.isArray(data) || data.length === 0) return FALLBACK_NEWS_EVENTS;
+    let rawArrays = [];
 
-    return data
-      .map((item, idx) => {
-        const ts = Date.parse(item.date || "");
-        return {
-          id: `live-${idx}-${item.title || "evt"}`,
-          currency: (item.country || "USD").toUpperCase(),
-          event: item.title || "Macro Release",
-          impact: ["High", "Medium", "Low"].includes(item.impact) ? item.impact : "Low",
-          forecast: item.forecast || "-",
-          previous: item.previous || "-",
-          timestampMillis: Number.isNaN(ts) ? Date.now() + idx * 3600 * 1000 : ts
-        };
-      })
-      .sort((a, b) => a.timestampMillis - b.timestampMillis);
-  } catch {
-    return FALLBACK_NEWS_EVENTS;
+    if (CALENDAR_API_URL && CALENDAR_API_URL.trim().startsWith("http")) {
+      const payload = await fetchJsonWithTimeout(CALENDAR_API_URL.trim(), 9000);
+      const list = Array.isArray(payload)
+        ? payload
+        : Array.isArray(payload?.events)
+          ? payload.events
+          : [];
+      rawArrays = [list];
+    } else {
+      const results = await Promise.allSettled(
+        DEFAULT_APPS_SCRIPT_FALLBACK_URLS.map((u) => fetchJsonWithTimeout(u, 8000))
+      );
+      rawArrays = results
+        .filter((r) => r.status === "fulfilled" && Array.isArray(r.value))
+        .map((r) => r.value);
+    }
+
+    const events = mergeNormalizedEvents(rawArrays);
+    if (events.length === 0) {
+      throw new Error("Empty calendar payload");
+    }
+
+    const fetchedAt = Date.now();
+    try {
+      localStorage.setItem(
+        CALENDAR_CACHE_KEY,
+        JSON.stringify({ events, fetchedAt })
+      );
+    } catch {
+      // ignore storage quota errors
+    }
+
+    return {
+      events,
+      isCached: false,
+      isFallback: false,
+      lastUpdated: fetchedAt,
+      error: null
+    };
+  } catch (err) {
+    try {
+      const rawCache = localStorage.getItem(CALENDAR_CACHE_KEY);
+      if (rawCache) {
+        const parsed = JSON.parse(rawCache);
+        if (Array.isArray(parsed?.events) && parsed.events.length > 0) {
+          return {
+            events: parsed.events,
+            isCached: true,
+            isFallback: false,
+            lastUpdated: parsed.fetchedAt || null,
+            error: err?.message || "Live feed unavailable"
+          };
+        }
+      }
+    } catch {
+      // ignore malformed cache
+    }
+
+    return {
+      events: FALLBACK_NEWS_EVENTS,
+      isCached: true,
+      isFallback: true,
+      lastUpdated: null,
+      error: err?.message || "Live feed unavailable"
+    };
   }
 }

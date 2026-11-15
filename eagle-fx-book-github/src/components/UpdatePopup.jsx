@@ -54,7 +54,7 @@ export default function UpdatePopup() {
         position: "fixed",
         inset: 0,
         zIndex: 1100,
-        backgroundColor: "rgba(5, 5, 5, 0.78)",
+        backgroundColor: "var(--modal-backdrop)",
         backdropFilter: "blur(8px)",
         display: "flex",
         alignItems: "center",
@@ -89,12 +89,12 @@ export default function UpdatePopup() {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                color: "#E11D2E"
+                color: "var(--primary)"
               }}
             >
               <RefreshCw size={18} strokeWidth={1.75} />
             </div>
-            <h3 style={{ margin: 0, fontSize: "16px", fontWeight: 700, color: "#F5F5F7" }}>
+            <h3 style={{ margin: 0, fontSize: "16px", fontWeight: 700, color: "var(--text)" }}>
               New update available
             </h3>
           </div>
@@ -106,7 +106,7 @@ export default function UpdatePopup() {
             style={{
               background: "transparent",
               border: "none",
-              color: "#8B8B95",
+              color: "var(--muted)",
               cursor: "pointer",
               display: "flex",
               alignItems: "center",
@@ -117,7 +117,7 @@ export default function UpdatePopup() {
           </button>
         </div>
 
-        <p style={{ margin: "0 0 18px 0", fontSize: "13px", lineHeight: 1.55, color: "#8B8B95" }}>
+        <p style={{ margin: "0 0 18px 0", fontSize: "13px", lineHeight: 1.55, color: "var(--muted)" }}>
           A new version of Eagle FX Book is ready. Update now to apply improvements without reinstalling.
         </p>
 

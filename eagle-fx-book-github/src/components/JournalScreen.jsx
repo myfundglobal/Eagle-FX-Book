@@ -120,10 +120,10 @@ export default function JournalScreen({
           </button>
 
           <div style={{ textAlign: "center" }}>
-            <div style={{ fontSize: "16px", fontWeight: 800, color: "#F5F5F7" }}>
+            <div style={{ fontSize: "16px", fontWeight: 800, color: "var(--text)" }}>
               {format(monthDate, "MMMM yyyy")}
             </div>
-            <div style={{ fontSize: "11px", color: "#8B8B95" }}>
+            <div style={{ fontSize: "11px", color: "var(--muted)" }}>
               Swipe left / right to switch month
             </div>
           </div>
@@ -146,8 +146,8 @@ export default function JournalScreen({
             gap: "6px",
             padding: "4px",
             borderRadius: "12px",
-            backgroundColor: "#141418",
-            border: "1px solid #23232A"
+            backgroundColor: "var(--surface-2)",
+            border: "1px solid var(--border)"
           }}
         >
           {["calendar", "list"].map((mode) => {
@@ -161,8 +161,8 @@ export default function JournalScreen({
                   minHeight: "38px",
                   border: "none",
                   borderRadius: "9px",
-                  backgroundColor: active ? "#E11D2E" : "transparent",
-                  color: active ? "#FFFFFF" : "#8B8B95",
+                  backgroundColor: active ? "var(--primary)" : "transparent",
+                  color: active ? "#FFFFFF" : "var(--muted)",
                   fontSize: "13px",
                   fontWeight: 700,
                   cursor: "pointer",
@@ -193,9 +193,9 @@ export default function JournalScreen({
                 fontSize: "12px",
                 fontWeight: 600,
                 cursor: "pointer",
-                border: active ? "1px solid #E11D2E" : "1px solid #23232A",
-                backgroundColor: active ? "rgba(225, 29, 46, 0.16)" : "#0D0D10",
-                color: active ? "#FF2D3D" : "#8B8B95"
+                border: active ? "1px solid var(--primary)" : "1px solid var(--border)",
+                backgroundColor: active ? "rgba(225, 29, 46, 0.16)" : "var(--surface)",
+                color: active ? "var(--primary-hover)" : "var(--muted)"
               }}
             >
               {tag}
@@ -213,9 +213,9 @@ export default function JournalScreen({
             fontSize: "12px",
             fontWeight: 700,
             cursor: "pointer",
-            border: "1px dashed #E11D2E",
+            border: "1px dashed var(--primary)",
             backgroundColor: "transparent",
-            color: "#E11D2E"
+            color: "var(--primary)"
           }}
         >
           + Tag
@@ -248,10 +248,10 @@ export default function JournalScreen({
               fontWeight: 800,
               color:
                 journal.monthlyPnl === 0
-                  ? "#F5F5F7"
+                  ? "var(--text)"
                   : journal.monthlyPnl < 0
-                    ? "#FF5C5C"
-                    : "#22C55E",
+                    ? "var(--loss)"
+                    : "var(--profit)",
               display: "flex",
               alignItems: "center",
               gap: "4px"
@@ -264,10 +264,10 @@ export default function JournalScreen({
 
         <div className="pro-card-flat" style={{ padding: "12px 14px" }}>
           <div style={statLabel}>WIN RATE</div>
-          <div className="font-mono-num" style={{ fontSize: "17px", fontWeight: 800, color: "#F5F5F7" }}>
+          <div className="font-mono-num" style={{ fontSize: "17px", fontWeight: 800, color: "var(--text)" }}>
             {journal.winRate}%
           </div>
-          <div className="font-mono-num" style={{ fontSize: "11px", color: "#8B8B95" }}>
+          <div className="font-mono-num" style={{ fontSize: "11px", color: "var(--muted)" }}>
             {journal.wins}W / {journal.losses}L
           </div>
         </div>
@@ -279,20 +279,20 @@ export default function JournalScreen({
             style={{
               fontSize: "17px",
               fontWeight: 800,
-              color: journal.streakIsWin ? "#22C55E" : "#FF5C5C"
+              color: journal.streakIsWin ? "var(--profit)" : "var(--loss)"
             }}
           >
             {journal.streakLabel}
           </div>
-          <div style={{ fontSize: "11px", color: "#8B8B95" }}>Current day streak</div>
+          <div style={{ fontSize: "11px", color: "var(--muted)" }}>Current day streak</div>
         </div>
 
         <div className="pro-card-flat" style={{ padding: "12px 14px" }}>
           <div style={statLabel}>TRADING DAYS</div>
-          <div className="font-mono-num" style={{ fontSize: "17px", fontWeight: 800, color: "#F5F5F7" }}>
+          <div className="font-mono-num" style={{ fontSize: "17px", fontWeight: 800, color: "var(--text)" }}>
             {journal.tradingDaysCount}
           </div>
-          <div style={{ fontSize: "11px", color: "#8B8B95" }}>
+          <div style={{ fontSize: "11px", color: "var(--muted)" }}>
             {journal.profitableDays} profitable
           </div>
         </div>
@@ -317,7 +317,7 @@ export default function JournalScreen({
               }}
             >
               {WEEKDAYS.map((day, idx) => (
-                <div key={idx} style={{ fontSize: "11px", fontWeight: 700, color: "#8B8B95" }}>
+                <div key={idx} style={{ fontSize: "11px", fontWeight: 700, color: "var(--muted)" }}>
                   {day}
                 </div>
               ))}
@@ -333,15 +333,15 @@ export default function JournalScreen({
                   ? "rgba(34, 197, 94, 0.14)"
                   : isLoss
                     ? "rgba(255, 92, 92, 0.14)"
-                    : "#141418";
+                    : "var(--surface-2)";
 
                 const border = cell.isToday
-                  ? "1.5px solid #E11D2E"
+                  ? "1.5px solid var(--primary)"
                   : isProfit
                     ? "1px solid rgba(34, 197, 94, 0.35)"
                     : isLoss
                       ? "1px solid rgba(255, 92, 92, 0.35)"
-                      : "1px solid #23232A";
+                      : "1px solid var(--border)";
 
                 return (
                   <button
@@ -354,7 +354,7 @@ export default function JournalScreen({
                       borderRadius: "10px",
                       backgroundColor: bg,
                       border,
-                      opacity: cell.inCurrentMonth ? 1 : 0.32,
+                      opacity: cell.inCurrentMonth ? 1 : 0.36,
                       display: "flex",
                       flexDirection: "column",
                       alignItems: "center",
@@ -367,7 +367,7 @@ export default function JournalScreen({
                       style={{
                         fontSize: "11px",
                         fontWeight: cell.isToday ? 800 : 600,
-                        color: cell.isToday ? "#E11D2E" : "#F5F5F7"
+                        color: cell.isToday ? "var(--primary)" : "var(--text)"
                       }}
                     >
                       {format(cell.date, "d")}
@@ -378,7 +378,7 @@ export default function JournalScreen({
                         style={{
                           fontSize: "9px",
                           fontWeight: 700,
-                          color: isLoss ? "#FF5C5C" : "#22C55E",
+                          color: isLoss ? "var(--loss)" : "var(--profit)",
                           lineHeight: 1.1
                         }}
                       >
@@ -398,40 +398,40 @@ export default function JournalScreen({
                 gap: "16px",
                 marginTop: "12px",
                 fontSize: "11px",
-                color: "#8B8B95"
+                color: "var(--muted)"
               }}
             >
-              <LegendDot color="#22C55E" label="Profit" />
-              <LegendDot color="#FF5C5C" label="Loss" />
-              <LegendDot color="#E11D2E" label="Today" outline />
+              <LegendDot color="var(--profit)" label="Profit" />
+              <LegendDot color="var(--loss)" label="Loss" />
+              <LegendDot color="var(--primary)" label="Today" outline />
             </div>
           </div>
 
           {/* Weekly Breakdown */}
           <div className="pro-card-flat">
-            <h3 style={{ margin: "0 0 12px 0", fontSize: "14px", fontWeight: 700, color: "#F5F5F7" }}>
+            <h3 style={{ margin: "0 0 12px 0", fontSize: "14px", fontWeight: 700, color: "var(--text)" }}>
               Weekly Breakdown
             </h3>
             <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
               {journal.weeks.map((wk) => {
                 const isNeg = wk.pnl < 0;
-                const pnlColor = wk.pnl === 0 ? "#8B8B95" : isNeg ? "#FF5C5C" : "#22C55E";
+                const pnlColor = wk.pnl === 0 ? "var(--muted)" : isNeg ? "var(--loss)" : "var(--profit)";
                 return (
                   <div
                     key={wk.weekIndex}
                     style={{
                       padding: "10px 12px",
                       borderRadius: "14px",
-                      backgroundColor: "#141418",
-                      border: "1px solid #23232A"
+                      backgroundColor: "var(--surface-2)",
+                      border: "1px solid var(--border)"
                     }}
                   >
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
                       <div>
-                        <span style={{ fontSize: "13px", fontWeight: 700, color: "#F5F5F7" }}>
+                        <span style={{ fontSize: "13px", fontWeight: 700, color: "var(--text)" }}>
                           Week {wk.weekIndex}
                         </span>{" "}
-                        <span style={{ fontSize: "11px", color: "#8B8B95" }}>
+                        <span style={{ fontSize: "11px", color: "var(--muted)" }}>
                           ({wk.rangeLabel})
                         </span>
                       </div>
@@ -457,7 +457,7 @@ export default function JournalScreen({
                         display: "flex",
                         justifyContent: "space-between",
                         fontSize: "11px",
-                        color: "#8B8B95",
+                        color: "var(--muted)",
                         marginBottom: "6px"
                       }}
                     >
@@ -465,12 +465,12 @@ export default function JournalScreen({
                       <span>Win rate {wk.winRate}%</span>
                     </div>
 
-                    <div style={{ height: "5px", borderRadius: "999px", backgroundColor: "#23232A", overflow: "hidden" }}>
+                    <div style={{ height: "5px", borderRadius: "999px", backgroundColor: "var(--border)", overflow: "hidden" }}>
                       <div
                         style={{
                           width: `${wk.winRate}%`,
                           height: "100%",
-                          backgroundColor: "#E11D2E",
+                          backgroundColor: "var(--primary)",
                           borderRadius: "999px"
                         }}
                       />
@@ -488,7 +488,7 @@ export default function JournalScreen({
             <Search
               size={16}
               strokeWidth={1.75}
-              color="#8B8B95"
+              color="var(--muted)"
               style={{ position: "absolute", left: "13px", top: "50%", transform: "translateY(-50%)" }}
             />
             <input
@@ -503,8 +503,8 @@ export default function JournalScreen({
 
           {Object.keys(groupedList).length === 0 ? (
             <div className="pro-card-flat" style={{ textAlign: "center", padding: "28px 16px" }}>
-              <CalendarDays size={28} strokeWidth={1.75} color="#E11D2E" style={{ marginBottom: "8px" }} />
-              <p style={{ margin: "0 0 12px 0", fontSize: "13px", color: "#8B8B95" }}>
+              <CalendarDays size={28} strokeWidth={1.75} color="var(--primary)" style={{ marginBottom: "8px" }} />
+              <p style={{ margin: "0 0 12px 0", fontSize: "13px", color: "var(--muted)" }}>
                 No trades match your filters.
               </p>
               <button type="button" className="btn-red" onClick={() => onOpenAddTrade()}>
@@ -515,7 +515,7 @@ export default function JournalScreen({
           ) : (
             Object.entries(groupedList).map(([dateKey, dayTrades]) => (
               <div key={dateKey} style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                <div className="font-mono-num" style={{ fontSize: "11px", fontWeight: 700, color: "#8B8B95", paddingLeft: "4px" }}>
+                <div className="font-mono-num" style={{ fontSize: "11px", fontWeight: 700, color: "var(--muted)", paddingLeft: "4px" }}>
                   {dateKey}
                 </div>
                 {dayTrades.map((trade) => (
@@ -544,7 +544,7 @@ export default function JournalScreen({
           width: "54px",
           height: "54px",
           borderRadius: "18px",
-          backgroundColor: "#E11D2E",
+          backgroundColor: "var(--primary)",
           color: "#FFFFFF",
           border: "1px solid rgba(255, 255, 255, 0.16)",
           boxShadow: "0 12px 28px rgba(225, 29, 46, 0.45)",
@@ -565,7 +565,7 @@ export default function JournalScreen({
             position: "fixed",
             inset: 0,
             zIndex: 850,
-            backgroundColor: "rgba(5, 5, 5, 0.78)",
+            backgroundColor: "var(--modal-backdrop)",
             backdropFilter: "blur(6px)",
             display: "flex",
             alignItems: "flex-end",
@@ -579,10 +579,10 @@ export default function JournalScreen({
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
               <div>
-                <h3 style={{ margin: 0, fontSize: "16px", color: "#F5F5F7" }}>
+                <h3 style={{ margin: 0, fontSize: "16px", color: "var(--text)" }}>
                   Trades on {selectedDayKey}
                 </h3>
-                <p className="font-mono-num" style={{ margin: "2px 0 0 0", fontSize: "12px", color: "#8B8B95" }}>
+                <p className="font-mono-num" style={{ margin: "2px 0 0 0", fontSize: "12px", color: "var(--muted)" }}>
                   Net: {formatPnl(selectedDayData?.pnl || 0)}
                 </p>
               </div>
@@ -590,14 +590,14 @@ export default function JournalScreen({
                 type="button"
                 onClick={() => setSelectedDayKey(null)}
                 className="touch-target"
-                style={{ background: "transparent", border: "none", color: "#8B8B95", cursor: "pointer" }}
+                style={{ background: "transparent", border: "none", color: "var(--muted)", cursor: "pointer" }}
               >
                 <X size={20} strokeWidth={1.75} />
               </button>
             </div>
 
             {(!selectedDayData || selectedDayData.trades.length === 0) ? (
-              <p style={{ fontSize: "13px", color: "#8B8B95", margin: "12px 0" }}>
+              <p style={{ fontSize: "13px", color: "var(--muted)", margin: "12px 0" }}>
                 No trades recorded for this day.
               </p>
             ) : (
@@ -645,7 +645,7 @@ function TradeDetailRow({ trade, onEdit, onDelete }) {
     <div className="pro-card-flat" style={{ padding: "12px 14px" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "8px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <span style={{ fontSize: "15px", fontWeight: 800, color: "#F5F5F7" }}>{trade.pair}</span>
+          <span style={{ fontSize: "15px", fontWeight: 800, color: "var(--text)" }}>{trade.pair}</span>
           <span
             style={{
               fontSize: "10px",
@@ -653,13 +653,13 @@ function TradeDetailRow({ trade, onEdit, onDelete }) {
               padding: "3px 8px",
               borderRadius: "8px",
               backgroundColor: isBuy ? "rgba(34,197,94,0.14)" : "rgba(255,92,92,0.14)",
-              color: isBuy ? "#22C55E" : "#FF5C5C"
+              color: isBuy ? "var(--profit)" : "var(--loss)"
             }}
           >
             {isBuy ? "BUY" : "SELL"}
           </span>
           {(trade.riskReward ?? trade.rMultiple) ? (
-            <span className="font-mono-num" style={{ fontSize: "11px", color: "#8B8B95" }}>
+            <span className="font-mono-num" style={{ fontSize: "11px", color: "var(--muted)" }}>
               {(trade.riskReward ?? trade.rMultiple) > 0 ? "+" : ""}
               {trade.riskReward ?? trade.rMultiple}R
             </span>
@@ -672,7 +672,7 @@ function TradeDetailRow({ trade, onEdit, onDelete }) {
             style={{
               fontSize: "14px",
               fontWeight: 800,
-              color: isNeg ? "#FF5C5C" : pnl > 0 ? "#22C55E" : "#8B8B95",
+              color: isNeg ? "var(--loss)" : pnl > 0 ? "var(--profit)" : "var(--muted)",
               display: "inline-flex",
               alignItems: "center",
               gap: "3px"
@@ -693,7 +693,7 @@ function TradeDetailRow({ trade, onEdit, onDelete }) {
             type="button"
             onClick={onDelete}
             aria-label="Delete trade"
-            style={{ ...iconBtnStyle, color: "#FF5C5C" }}
+            style={{ ...iconBtnStyle, color: "var(--loss)" }}
           >
             <Trash2 size={14} strokeWidth={1.75} />
           </button>
@@ -707,13 +707,13 @@ function TradeDetailRow({ trade, onEdit, onDelete }) {
           gridTemplateColumns: "1fr 1fr 1fr",
           gap: "8px",
           fontSize: "11px",
-          color: "#8B8B95",
+          color: "var(--muted)",
           marginBottom: trade.notes || trade.screenshotBase64 ? "8px" : "0"
         }}
       >
-        <span>Lot: <strong style={{ color: "#F5F5F7" }}>{trade.lotSize}</strong></span>
-        <span>Entry: <strong style={{ color: "#F5F5F7" }}>{trade.entryPrice}</strong></span>
-        <span>Exit: <strong style={{ color: "#F5F5F7" }}>{trade.exitPrice}</strong></span>
+        <span>Lot: <strong style={{ color: "var(--text)" }}>{trade.lotSize}</strong></span>
+        <span>Entry: <strong style={{ color: "var(--text)" }}>{trade.entryPrice}</strong></span>
+        <span>Exit: <strong style={{ color: "var(--text)" }}>{trade.exitPrice}</strong></span>
       </div>
 
       {Array.isArray(trade.strategyTags) && trade.strategyTags.length > 0 && (
@@ -726,7 +726,7 @@ function TradeDetailRow({ trade, onEdit, onDelete }) {
                 padding: "2px 8px",
                 borderRadius: "999px",
                 backgroundColor: "rgba(225, 29, 46, 0.14)",
-                color: "#FF2D3D",
+                color: "var(--primary-hover)",
                 fontWeight: 600
               }}
             >
@@ -737,7 +737,7 @@ function TradeDetailRow({ trade, onEdit, onDelete }) {
       )}
 
       {trade.notes && (
-        <p style={{ margin: "8px 0 0 0", fontSize: "12px", color: "#8B8B95", lineHeight: 1.45 }}>
+        <p style={{ margin: "8px 0 0 0", fontSize: "12px", color: "var(--muted)", lineHeight: 1.45 }}>
           {trade.notes}
         </p>
       )}
@@ -752,7 +752,7 @@ function TradeDetailRow({ trade, onEdit, onDelete }) {
             objectFit: "cover",
             borderRadius: "10px",
             marginTop: "8px",
-            border: "1px solid #23232A"
+            border: "1px solid var(--border)"
           }}
         />
       )}
@@ -781,7 +781,7 @@ const statLabel = {
   fontSize: "10px",
   fontWeight: 700,
   letterSpacing: "0.7px",
-  color: "#8B8B95",
+  color: "var(--muted)",
   marginBottom: "4px"
 };
 
@@ -789,9 +789,9 @@ const iconBtnStyle = {
   width: "34px",
   height: "34px",
   borderRadius: "10px",
-  backgroundColor: "#141418",
-  border: "1px solid #23232A",
-  color: "#F5F5F7",
+  backgroundColor: "var(--surface-2)",
+  border: "1px solid var(--border)",
+  color: "var(--text)",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",

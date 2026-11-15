@@ -109,8 +109,8 @@ export default function StoreScreen({
           gap: "6px",
           padding: "4px",
           borderRadius: "14px",
-          backgroundColor: "#0D0D10",
-          border: "1px solid #23232A"
+          backgroundColor: "var(--surface)",
+          border: "1px solid var(--border)"
         }}
       >
         {[
@@ -127,8 +127,8 @@ export default function StoreScreen({
                 minHeight: "42px",
                 border: "none",
                 borderRadius: "10px",
-                backgroundColor: active ? "#E11D2E" : "transparent",
-                color: active ? "#FFFFFF" : "#8B8B95",
+                backgroundColor: active ? "var(--primary)" : "transparent",
+                color: active ? "#FFFFFF" : "var(--muted)",
                 fontSize: "13px",
                 fontWeight: 700,
                 cursor: "pointer"
@@ -147,7 +147,7 @@ export default function StoreScreen({
             borderRadius: "12px",
             backgroundColor: "rgba(34,197,94,0.14)",
             border: "1px solid rgba(34,197,94,0.35)",
-            color: "#22C55E",
+            color: "var(--profit)",
             fontSize: "13px"
           }}
         >
@@ -159,14 +159,14 @@ export default function StoreScreen({
         <>
           {/* Subscription Plans */}
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <Sparkles size={16} strokeWidth={1.75} color="#E11D2E" />
-            <h3 style={{ margin: 0, fontSize: "14px", fontWeight: 800, color: "#F5F5F7" }}>
+            <Sparkles size={16} strokeWidth={1.75} color="var(--primary)" />
+            <h3 style={{ margin: 0, fontSize: "14px", fontWeight: 800, color: "var(--text)" }}>
               Eagle FX Book Plans
             </h3>
           </div>
 
           {plans.length === 0 ? (
-            <div className="pro-card-flat" style={{ fontSize: "13px", color: "#8B8B95" }}>
+            <div className="pro-card-flat" style={{ fontSize: "13px", color: "var(--muted)" }}>
               No active subscription plans right now.
             </div>
           ) : (
@@ -174,10 +174,10 @@ export default function StoreScreen({
               <div key={plan.id} className="pro-card">
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "8px" }}>
                   <div>
-                    <div style={{ fontSize: "16px", fontWeight: 800, color: "#F5F5F7" }}>
+                    <div style={{ fontSize: "16px", fontWeight: 800, color: "var(--text)" }}>
                       {plan.name}
                     </div>
-                    <div style={{ fontSize: "12px", color: "#8B8B95" }}>
+                    <div style={{ fontSize: "12px", color: "var(--muted)" }}>
                       {plan.durationLabel}
                     </div>
                   </div>
@@ -189,7 +189,7 @@ export default function StoreScreen({
                         padding: "4px 9px",
                         borderRadius: "999px",
                         backgroundColor: "rgba(225, 29, 46, 0.16)",
-                        color: "#FF2D3D"
+                        color: "var(--primary-hover)"
                       }}
                     >
                       {plan.badgeText}
@@ -197,15 +197,15 @@ export default function StoreScreen({
                   )}
                 </div>
 
-                <div className="font-mono-num" style={{ fontSize: "22px", fontWeight: 800, color: "#F5F5F7", marginBottom: "10px" }}>
+                <div className="font-mono-num" style={{ fontSize: "22px", fontWeight: 800, color: "var(--text)", marginBottom: "10px" }}>
                   ${plan.priceUsd}{" "}
-                  <span style={{ fontSize: "12px", color: "#8B8B95", fontWeight: 600 }}>
+                  <span style={{ fontSize: "12px", color: "var(--muted)", fontWeight: 600 }}>
                     / ₹{plan.priceInr}
                   </span>
                 </div>
 
                 {Array.isArray(plan.features) && plan.features.length > 0 && (
-                  <ul style={{ margin: "0 0 14px 0", paddingLeft: "18px", fontSize: "12px", color: "#8B8B95", lineHeight: 1.7 }}>
+                  <ul style={{ margin: "0 0 14px 0", paddingLeft: "18px", fontSize: "12px", color: "var(--muted)", lineHeight: 1.7 }}>
                     {plan.features.map((f, i) => (
                       <li key={i}>{f}</li>
                     ))}
@@ -234,14 +234,14 @@ export default function StoreScreen({
 
           {/* Algo Bots & Software */}
           <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "6px" }}>
-            <Package size={16} strokeWidth={1.75} color="#E11D2E" />
-            <h3 style={{ margin: 0, fontSize: "14px", fontWeight: 800, color: "#F5F5F7" }}>
+            <Package size={16} strokeWidth={1.75} color="var(--primary)" />
+            <h3 style={{ margin: 0, fontSize: "14px", fontWeight: 800, color: "var(--text)" }}>
               Algo Bots &amp; Software
             </h3>
           </div>
 
           {products.length === 0 ? (
-            <div className="pro-card-flat" style={{ fontSize: "13px", color: "#8B8B95" }}>
+            <div className="pro-card-flat" style={{ fontSize: "13px", color: "var(--muted)" }}>
               Store catalog will appear here when added by Admin.
             </div>
           ) : (
@@ -250,17 +250,17 @@ export default function StoreScreen({
               return (
                 <div key={prod.id} className="pro-card-flat">
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
-                    <span style={{ fontSize: "11px", fontWeight: 700, color: "#E11D2E" }}>
+                    <span style={{ fontSize: "11px", fontWeight: 700, color: "var(--primary)" }}>
                       {prod.category} • v{prod.version}
                     </span>
-                    <span className="font-mono-num" style={{ fontSize: "15px", fontWeight: 800, color: "#F5F5F7" }}>
+                    <span className="font-mono-num" style={{ fontSize: "15px", fontWeight: 800, color: "var(--text)" }}>
                       ${prod.priceUsd} / ₹{prod.priceInr}
                     </span>
                   </div>
-                  <h4 style={{ margin: "0 0 6px 0", fontSize: "16px", fontWeight: 800, color: "#F5F5F7" }}>
+                  <h4 style={{ margin: "0 0 6px 0", fontSize: "16px", fontWeight: 800, color: "var(--text)" }}>
                     {prod.name}
                   </h4>
-                  <p style={{ margin: "0 0 12px 0", fontSize: "13px", color: "#8B8B95", lineHeight: 1.5 }}>
+                  <p style={{ margin: "0 0 12px 0", fontSize: "13px", color: "var(--muted)", lineHeight: 1.5 }}>
                     {prod.description}
                   </p>
                   {unlocked ? (
@@ -285,7 +285,7 @@ export default function StoreScreen({
                           name: prod.name,
                           itemType: "Product",
                           durationDays: 0,
-                          amountLabel: `$${prod.priceUsd} / ₹{prod.priceInr}`
+                          amountLabel: `$${prod.priceUsd} / ₹${prod.priceInr}`
                         })
                       }
                     >
@@ -300,7 +300,7 @@ export default function StoreScreen({
         </>
       ) : orders.length === 0 ? (
         <div className="pro-card-flat" style={{ textAlign: "center", padding: "28px 16px" }}>
-          <p style={{ margin: 0, fontSize: "13px", color: "#8B8B95" }}>
+          <p style={{ margin: 0, fontSize: "13px", color: "var(--muted)" }}>
             You have not placed any orders yet.
           </p>
         </div>
@@ -308,14 +308,20 @@ export default function StoreScreen({
         orders.map((order) => {
           const statusColor =
             order.status === "Approved"
-              ? "#22C55E"
+              ? "var(--profit)"
               : order.status === "Rejected"
-                ? "#FF5C5C"
-                : "#F5B301";
+                ? "var(--loss)"
+                : "var(--warning)";
+          const statusBg =
+            order.status === "Approved"
+              ? "rgba(34,197,94,0.14)"
+              : order.status === "Rejected"
+                ? "rgba(255,92,92,0.14)"
+                : "rgba(245,179,1,0.14)";
           return (
             <div key={order.id} className="pro-card-flat">
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
-                <span style={{ fontSize: "15px", fontWeight: 800, color: "#F5F5F7" }}>
+                <span style={{ fontSize: "15px", fontWeight: 800, color: "var(--text)" }}>
                   {order.productName}
                 </span>
                 <span
@@ -324,18 +330,18 @@ export default function StoreScreen({
                     fontWeight: 800,
                     padding: "3px 9px",
                     borderRadius: "999px",
-                    backgroundColor: `${statusColor}22`,
+                    backgroundColor: statusBg,
                     color: statusColor
                   }}
                 >
                   {order.status}
                 </span>
               </div>
-              <div className="font-mono-num" style={{ fontSize: "12px", color: "#8B8B95" }}>
+              <div className="font-mono-num" style={{ fontSize: "12px", color: "var(--muted)" }}>
                 {order.paymentMethod} • {order.amountLabel} • Txn: {order.transactionId}
               </div>
               {order.adminNote && (
-                <div style={{ fontSize: "12px", color: "#F5F5F7", marginTop: "6px" }}>
+                <div style={{ fontSize: "12px", color: "var(--text)", marginTop: "6px" }}>
                   Note: {order.adminNote}
                 </div>
               )}
@@ -351,7 +357,7 @@ export default function StoreScreen({
             position: "fixed",
             inset: 0,
             zIndex: 920,
-            backgroundColor: "rgba(5, 5, 5, 0.82)",
+            backgroundColor: "var(--modal-backdrop)",
             backdropFilter: "blur(8px)",
             display: "flex",
             alignItems: "flex-end",
@@ -362,10 +368,10 @@ export default function StoreScreen({
           <div className="pro-card" style={{ width: "100%", maxWidth: "430px", maxHeight: "90dvh", overflowY: "auto" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
               <div>
-                <h3 style={{ margin: 0, fontSize: "16px", color: "#F5F5F7" }}>
+                <h3 style={{ margin: 0, fontSize: "16px", color: "var(--text)" }}>
                   Checkout: {checkoutItem.name}
                 </h3>
-                <p className="font-mono-num" style={{ margin: "2px 0 0 0", fontSize: "12px", color: "#E11D2E" }}>
+                <p className="font-mono-num" style={{ margin: "2px 0 0 0", fontSize: "12px", color: "var(--primary)" }}>
                   Amount: {checkoutItem.amountLabel}
                 </p>
               </div>
@@ -373,7 +379,7 @@ export default function StoreScreen({
                 type="button"
                 onClick={() => setCheckoutItem(null)}
                 className="touch-target"
-                style={{ background: "transparent", border: "none", color: "#8B8B95", cursor: "pointer" }}
+                style={{ background: "transparent", border: "none", color: "var(--muted)", cursor: "pointer" }}
               >
                 <X size={20} strokeWidth={1.75} />
               </button>
@@ -388,9 +394,9 @@ export default function StoreScreen({
                   style={{
                     minHeight: "42px",
                     borderRadius: "12px",
-                    border: paymentMethod === m ? "1.5px solid #E11D2E" : "1px solid #23232A",
-                    backgroundColor: paymentMethod === m ? "rgba(225,29,46,0.16)" : "#141418",
-                    color: paymentMethod === m ? "#FFFFFF" : "#8B8B95",
+                    border: paymentMethod === m ? "1.5px solid var(--primary)" : "1px solid var(--border)",
+                    backgroundColor: paymentMethod === m ? "rgba(225,29,46,0.16)" : "var(--surface-2)",
+                    color: paymentMethod === m ? "var(--text)" : "var(--muted)",
                     fontWeight: 700,
                     cursor: "pointer"
                   }}
@@ -404,8 +410,8 @@ export default function StoreScreen({
               style={{
                 padding: "12px",
                 borderRadius: "14px",
-                backgroundColor: "#141418",
-                border: "1px solid #23232A",
+                backgroundColor: "var(--surface-2)",
+                border: "1px solid var(--border)",
                 marginBottom: "12px"
               }}
             >
@@ -427,9 +433,9 @@ export default function StoreScreen({
                       }}
                     />
                   )}
-                  <div style={{ fontSize: "11px", color: "#8B8B95", marginBottom: "4px" }}>UPI ID</div>
+                  <div style={{ fontSize: "11px", color: "var(--muted)", marginBottom: "4px" }}>UPI ID</div>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "8px" }}>
-                    <span className="font-mono-num" style={{ fontSize: "13px", color: "#F5F5F7", wordBreak: "break-all" }}>
+                    <span className="font-mono-num" style={{ fontSize: "13px", color: "var(--text)", wordBreak: "break-all" }}>
                       {adminSettings.currentUpiId || "eaglefx@upi"}
                     </span>
                     <button
@@ -439,7 +445,7 @@ export default function StoreScreen({
                       onClick={() => handleCopy(adminSettings.currentUpiId || "eaglefx@upi")}
                     >
                       {copiedText === (adminSettings.currentUpiId || "eaglefx@upi") ? (
-                        <Check size={14} color="#22C55E" />
+                        <Check size={14} color="var(--profit)" />
                       ) : (
                         <Copy size={14} />
                       )}
@@ -448,11 +454,11 @@ export default function StoreScreen({
                 </>
               ) : (
                 <>
-                  <div style={{ fontSize: "11px", color: "#8B8B95", marginBottom: "4px" }}>
+                  <div style={{ fontSize: "11px", color: "var(--muted)", marginBottom: "4px" }}>
                     WALLET ({adminSettings.cryptoNetwork || "TRC20"})
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "8px" }}>
-                    <span className="font-mono-num" style={{ fontSize: "12px", color: "#F5F5F7", wordBreak: "break-all" }}>
+                    <span className="font-mono-num" style={{ fontSize: "12px", color: "var(--text)", wordBreak: "break-all" }}>
                       {adminSettings.currentCryptoWalletAddress || "TX9EagleFxBookTrc20Wallet"}
                     </span>
                     <button
@@ -463,7 +469,7 @@ export default function StoreScreen({
                         handleCopy(adminSettings.currentCryptoWalletAddress || "TX9EagleFxBookTrc20Wallet")
                       }
                     >
-                      {copiedText ? <Check size={14} color="#22C55E" /> : <Copy size={14} />}
+                      {copiedText ? <Check size={14} color="var(--profit)" /> : <Copy size={14} />}
                     </button>
                   </div>
                 </>
@@ -479,11 +485,11 @@ export default function StoreScreen({
                 placeholder="Enter UTR / Transaction ID / TxHash"
               />
               <label className="btn-surface" style={{ cursor: "pointer" }}>
-                <ImagePlus size={16} strokeWidth={1.75} color="#E11D2E" />
+                <ImagePlus size={16} strokeWidth={1.75} color="var(--primary)" />
                 <span>{screenshotBase64 ? "Payment Screenshot Attached" : "Upload Payment Screenshot"}</span>
                 <input type="file" accept="image/*" onChange={handleScreenshot} style={{ display: "none" }} />
               </label>
-              {error && <div style={{ fontSize: "12px", color: "#FF5C5C" }}>{error}</div>}
+              {error && <div style={{ fontSize: "12px", color: "var(--loss)" }}>{error}</div>}
               <button type="submit" disabled={submitting} className="btn-red">
                 {submitting ? "Submitting..." : "Submit Payment Proof"}
               </button>

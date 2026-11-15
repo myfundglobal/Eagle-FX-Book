@@ -8,10 +8,46 @@
   --primary-deep: #7f0f18;
   --text: #f5f5f7;
   --muted: #8b8b95;
+  --muted-soft: #5e5e68;
   --profit: #22c55e;
   --loss: #ff5c5c;
   --warning: #f5b301;
+  --orange: #f97316;
+  --nav-bg: rgba(13, 13, 16, 0.9);
+  --modal-backdrop: rgba(5, 5, 5, 0.82);
+  --card-grad: linear-gradient(180deg, rgba(225, 29, 46, 0.06) 0%, var(--surface) 44%);
+  --card-shadow: 0 12px 30px rgba(0, 0, 0, 0.48), inset 0 1px 0 rgba(225, 29, 46, 0.16);
+  --flat-shadow: 0 10px 24px rgba(0, 0, 0, 0.36);
+  --nav-shadow: 0 16px 36px rgba(0, 0, 0, 0.72);
+  --skeleton-a: #121216;
+  --skeleton-b: #1d1d24;
   color-scheme: dark;
+}
+
+[data-theme="light"] {
+  --bg: #f6f6f8;
+  --surface: #ffffff;
+  --surface-2: #efeff4;
+  --border: #dcdce2;
+  --primary: #e11d2e;
+  --primary-hover: #c81424;
+  --primary-deep: #7f0f18;
+  --text: #111115;
+  --muted: #5a5a66;
+  --muted-soft: #787885;
+  --profit: #15803d;
+  --loss: #dc2626;
+  --warning: #d97706;
+  --orange: #ea580c;
+  --nav-bg: rgba(255, 255, 255, 0.92);
+  --modal-backdrop: rgba(17, 17, 21, 0.56);
+  --card-grad: linear-gradient(180deg, rgba(225, 29, 46, 0.05) 0%, var(--surface) 40%);
+  --card-shadow: 0 10px 26px rgba(17, 17, 21, 0.08), inset 0 1px 0 rgba(225, 29, 46, 0.14);
+  --flat-shadow: 0 6px 18px rgba(17, 17, 21, 0.06);
+  --nav-shadow: 0 14px 32px rgba(17, 17, 21, 0.14);
+  --skeleton-a: #e8e8ee;
+  --skeleton-b: #f3f3f7;
+  color-scheme: light;
 }
 
 * {
@@ -29,6 +65,7 @@ body {
   min-height: 100%;
   overscroll-behavior-y: contain;
   -webkit-font-smoothing: antialiased;
+  transition: background-color 0.22s ease, color 0.22s ease;
 }
 
 button,
@@ -54,11 +91,12 @@ select {
 
 .pro-card {
   position: relative;
-  background: linear-gradient(180deg, rgba(225, 29, 46, 0.06) 0%, var(--surface) 44%);
+  background: var(--card-grad);
   border: 1px solid var(--border);
   border-radius: 20px;
   padding: 16px;
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.48), inset 0 1px 0 rgba(225, 29, 46, 0.16);
+  box-shadow: var(--card-shadow);
+  transition: background 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;
 }
 
 .pro-card-flat {
@@ -66,7 +104,8 @@ select {
   border: 1px solid var(--border);
   border-radius: 20px;
   padding: 16px;
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.36);
+  box-shadow: var(--flat-shadow);
+  transition: background-color 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;
 }
 
 .pro-input {
@@ -79,7 +118,7 @@ select {
   color: var(--text);
   font-size: 14px;
   outline: none;
-  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.22s ease, color 0.22s ease;
 }
 
 .pro-input:focus {
@@ -88,7 +127,7 @@ select {
 }
 
 .pro-input::placeholder {
-  color: #5e5e68;
+  color: var(--muted-soft);
 }
 
 .btn-red {
@@ -135,7 +174,7 @@ select {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  transition: border-color 0.15s ease, transform 0.12s ease;
+  transition: border-color 0.15s ease, transform 0.12s ease, background-color 0.22s ease, color 0.22s ease;
 }
 
 .btn-surface:active {
@@ -157,7 +196,7 @@ select {
 }
 
 .skeleton {
-  background: linear-gradient(90deg, #121216 25%, #1d1d24 50%, #121216 75%);
+  background: linear-gradient(90deg, var(--skeleton-a) 25%, var(--skeleton-b) 50%, var(--skeleton-a) 75%);
   background-size: 800px 100%;
   animation: shimmer 1.4s infinite linear;
   border-radius: 14px;

@@ -172,7 +172,7 @@ export default function AuthScreen() {
     <div
       style={{
         minHeight: "100dvh",
-        backgroundColor: "#050505",
+        backgroundColor: "var(--bg)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -210,12 +210,12 @@ export default function AuthScreen() {
               fontSize: "20px",
               fontWeight: 800,
               letterSpacing: "1.6px",
-              color: "#F5F5F7"
+              color: "var(--text)"
             }}
           >
             EAGLE FX BOOK
           </h1>
-          <p style={{ margin: 0, fontSize: "13px", color: "#8B8B95" }}>
+          <p style={{ margin: 0, fontSize: "13px", color: "var(--muted)" }}>
             “Master your mind, master the market.”
           </p>
         </div>
@@ -228,7 +228,7 @@ export default function AuthScreen() {
               backgroundColor: "rgba(245, 179, 1, 0.1)",
               border: "1px solid rgba(245, 179, 1, 0.4)",
               fontSize: "12px",
-              color: "#F5B301",
+              color: "var(--warning)",
               lineHeight: 1.5
             }}
           >
@@ -245,9 +245,9 @@ export default function AuthScreen() {
                 gridTemplateColumns: "1fr 1fr",
                 gap: "6px",
                 padding: "4px",
-                backgroundColor: "#141418",
+                backgroundColor: "var(--surface-2)",
                 borderRadius: "14px",
-                border: "1px solid #23232A",
+                border: "1px solid var(--border)",
                 marginBottom: "18px"
               }}
             >
@@ -265,8 +265,8 @@ export default function AuthScreen() {
                       minHeight: "42px",
                       border: "none",
                       borderRadius: "10px",
-                      backgroundColor: active ? "#E11D2E" : "transparent",
-                      color: active ? "#FFFFFF" : "#8B8B95",
+                      backgroundColor: active ? "var(--primary)" : "transparent",
+                      color: active ? "#FFFFFF" : "var(--muted)",
                       fontWeight: 700,
                       fontSize: "14px",
                       cursor: "pointer",
@@ -290,7 +290,7 @@ export default function AuthScreen() {
                 borderRadius: "12px",
                 backgroundColor: "rgba(255, 92, 92, 0.12)",
                 border: "1px solid rgba(255, 92, 92, 0.35)",
-                color: "#FF5C5C",
+                color: "var(--loss)",
                 fontSize: "13px",
                 marginBottom: "14px"
               }}
@@ -310,7 +310,7 @@ export default function AuthScreen() {
                 borderRadius: "12px",
                 backgroundColor: "rgba(34, 197, 94, 0.12)",
                 border: "1px solid rgba(34, 197, 94, 0.35)",
-                color: "#22C55E",
+                color: "var(--profit)",
                 fontSize: "13px",
                 marginBottom: "14px"
               }}
@@ -325,7 +325,7 @@ export default function AuthScreen() {
               <div>
                 <label style={labelStyle}>EMAIL</label>
                 <div style={{ position: "relative" }}>
-                  <Mail size={16} strokeWidth={1.75} color="#8B8B95" style={iconLeftStyle} />
+                  <Mail size={16} strokeWidth={1.75} color="var(--muted)" style={iconLeftStyle} />
                   <input
                     type="email"
                     className="pro-input"
@@ -340,7 +340,7 @@ export default function AuthScreen() {
               <div>
                 <label style={labelStyle}>PASSWORD</label>
                 <div style={{ position: "relative" }}>
-                  <Lock size={16} strokeWidth={1.75} color="#8B8B95" style={iconLeftStyle} />
+                  <Lock size={16} strokeWidth={1.75} color="var(--muted)" style={iconLeftStyle} />
                   <input
                     type={showPassword ? "text" : "password"}
                     className="pro-input"
@@ -367,7 +367,7 @@ export default function AuthScreen() {
                   style={{
                     background: "transparent",
                     border: "none",
-                    color: "#E11D2E",
+                    color: "var(--primary)",
                     fontSize: "13px",
                     fontWeight: 600,
                     cursor: "pointer",
@@ -389,7 +389,7 @@ export default function AuthScreen() {
               <div>
                 <label style={labelStyle}>FULL NAME</label>
                 <div style={{ position: "relative" }}>
-                  <User size={16} strokeWidth={1.75} color="#8B8B95" style={iconLeftStyle} />
+                  <User size={16} strokeWidth={1.75} color="var(--muted)" style={iconLeftStyle} />
                   <input
                     type="text"
                     className="pro-input"
@@ -404,7 +404,7 @@ export default function AuthScreen() {
               <div>
                 <label style={labelStyle}>EMAIL</label>
                 <div style={{ position: "relative" }}>
-                  <Mail size={16} strokeWidth={1.75} color="#8B8B95" style={iconLeftStyle} />
+                  <Mail size={16} strokeWidth={1.75} color="var(--muted)" style={iconLeftStyle} />
                   <input
                     type="email"
                     className="pro-input"
@@ -419,7 +419,7 @@ export default function AuthScreen() {
               <div>
                 <label style={labelStyle}>PASSWORD</label>
                 <div style={{ position: "relative" }}>
-                  <Lock size={16} strokeWidth={1.75} color="#8B8B95" style={iconLeftStyle} />
+                  <Lock size={16} strokeWidth={1.75} color="var(--muted)" style={iconLeftStyle} />
                   <input
                     type={showPassword ? "text" : "password"}
                     className="pro-input"
@@ -442,7 +442,7 @@ export default function AuthScreen() {
               <div>
                 <label style={labelStyle}>CONFIRM PASSWORD</label>
                 <div style={{ position: "relative" }}>
-                  <Lock size={16} strokeWidth={1.75} color="#8B8B95" style={iconLeftStyle} />
+                  <Lock size={16} strokeWidth={1.75} color="var(--muted)" style={iconLeftStyle} />
                   <input
                     type={showConfirm ? "text" : "password"}
                     className="pro-input"
@@ -468,7 +468,7 @@ export default function AuthScreen() {
                   alignItems: "center",
                   gap: "10px",
                   fontSize: "12px",
-                  color: "#8B8B95",
+                  color: "var(--muted)",
                   cursor: "pointer",
                   padding: "4px 0"
                 }}
@@ -477,7 +477,7 @@ export default function AuthScreen() {
                   type="checkbox"
                   checked={acceptedTerms}
                   onChange={(e) => setAcceptedTerms(e.target.checked)}
-                  style={{ accentColor: "#E11D2E", width: "16px", height: "16px" }}
+                  style={{ accentColor: "var(--primary)", width: "16px", height: "16px" }}
                 />
                 <span>I agree to the Eagle FX Book Terms &amp; Privacy Policy.</span>
               </label>
@@ -490,14 +490,14 @@ export default function AuthScreen() {
 
           {mode === "forgot" && (
             <form onSubmit={handleResetPassword} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-              <h3 style={{ margin: 0, fontSize: "16px", color: "#F5F5F7" }}>
+              <h3 style={{ margin: 0, fontSize: "16px", color: "var(--text)" }}>
                 Reset Password
               </h3>
-              <p style={{ margin: 0, fontSize: "13px", color: "#8B8B95", lineHeight: 1.5 }}>
+              <p style={{ margin: 0, fontSize: "13px", color: "var(--muted)", lineHeight: 1.5 }}>
                 Enter your registered email address and we will send a reset link.
               </p>
               <div style={{ position: "relative" }}>
-                <Mail size={16} strokeWidth={1.75} color="#8B8B95" style={iconLeftStyle} />
+                <Mail size={16} strokeWidth={1.75} color="var(--muted)" style={iconLeftStyle} />
                 <input
                   type="email"
                   className="pro-input"
@@ -530,9 +530,9 @@ export default function AuthScreen() {
                   margin: "16px 0"
                 }}
               >
-                <div style={{ flex: 1, height: "1px", backgroundColor: "#23232A" }} />
-                <span style={{ fontSize: "11px", color: "#8B8B95", letterSpacing: "1px" }}>OR</span>
-                <div style={{ flex: 1, height: "1px", backgroundColor: "#23232A" }} />
+                <div style={{ flex: 1, height: "1px", backgroundColor: "var(--border)" }} />
+                <span style={{ fontSize: "11px", color: "var(--muted)", letterSpacing: "1px" }}>OR</span>
+                <div style={{ flex: 1, height: "1px", backgroundColor: "var(--border)" }} />
               </div>
 
               <button
@@ -542,7 +542,7 @@ export default function AuthScreen() {
                 onClick={handleGoogleSignIn}
                 style={{ width: "100%" }}
               >
-                <ShieldCheck size={17} strokeWidth={1.75} color="#E11D2E" />
+                <ShieldCheck size={17} strokeWidth={1.75} color="var(--primary)" />
                 Continue with Google
               </button>
             </>
@@ -558,7 +558,7 @@ const labelStyle = {
   fontSize: "11px",
   fontWeight: 700,
   letterSpacing: "0.8px",
-  color: "#8B8B95",
+  color: "var(--muted)",
   marginBottom: "6px"
 };
 
@@ -576,7 +576,7 @@ const eyeButtonStyle = {
   transform: "translateY(-50%)",
   background: "transparent",
   border: "none",
-  color: "#8B8B95",
+  color: "var(--muted)",
   cursor: "pointer",
   width: "36px",
   height: "36px",

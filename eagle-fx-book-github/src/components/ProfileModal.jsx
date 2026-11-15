@@ -5,7 +5,6 @@ import {
   CheckCircle2,
   LogOut,
   MailCheck,
-  Shield,
   User,
   X
 } from "lucide-react";
@@ -14,12 +13,15 @@ import {
   compressImageToBase64,
   validatePhone
 } from "../utils/formatters.js";
+import PlanSummaryCard from "./PlanSummaryCard.jsx";
 
 export default function ProfileModal({
   user,
   profile,
+  planInfo,
   isOnboarding,
   onSave,
+  onOpenStore,
   onSignOut,
   onClose
 }) {
@@ -106,7 +108,7 @@ export default function ProfileModal({
         position: "fixed",
         inset: 0,
         zIndex: 900,
-        backgroundColor: "rgba(5, 5, 5, 0.8)",
+        backgroundColor: "var(--modal-backdrop)",
         backdropFilter: "blur(8px)",
         display: "flex",
         alignItems: "flex-end",
@@ -119,23 +121,25 @@ export default function ProfileModal({
         style={{
           width: "100%",
           maxWidth: "430px",
-          maxHeight: "90dvh",
-          overflowY: "auto"
+          maxHeight: "92dvh",
+          overflowY: "auto",
+          display: "flex",
+          flexDirection: "column",
+          gap: "14px"
         }}
       >
         <div
           style={{
             display: "flex",
             justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: "14px"
+            alignItems: "center"
           }}
         >
           <div>
-            <h2 style={{ margin: 0, fontSize: "17px", color: "#F5F5F7" }}>
+            <h2 style={{ margin: 0, fontSize: "17px", color: "var(--text)" }}>
               {isOnboarding ? "Complete Trader Profile" : "Trader Profile"}
             </h2>
-            <p style={{ margin: "2px 0 0 0", fontSize: "12px", color: "#8B8B95" }}>
+            <p style={{ margin: "2px 0 0 0", fontSize: "12px", color: "var(--muted)" }}>
               {user?.email}
             </p>
           </div>
@@ -147,13 +151,25 @@ export default function ProfileModal({
             style={{
               background: "transparent",
               border: "none",
-              color: "#8B8B95",
+              color: "var(--muted)",
               cursor: "pointer"
             }}
           >
             <X size={20} strokeWidth={1.75} />
           </button>
         </div>
+
+        {/* Plan Info Card */}
+        {planInfo && (
+          <PlanSummaryCard
+            planInfo={planInfo}
+            onRenew={() => {
+              onClose();
+              onOpenStore?.();
+            }}
+            compact
+          />
+        )}
 
         {/* Email verification status */}
         <div
@@ -163,9 +179,8 @@ export default function ProfileModal({
             justifyContent: "space-between",
             padding: "10px 12px",
             borderRadius: "12px",
-            backgroundColor: "#141418",
-            border: "1px solid #23232A",
-            marginBottom: "14px",
+            backgroundColor: "var(--surface-2)",
+            border: "1px solid var(--border)",
             fontSize: "12px"
           }}
         >
@@ -173,9 +188,9 @@ export default function ProfileModal({
             <MailCheck
               size={16}
               strokeWidth={1.75}
-              color={user?.emailVerified ? "#22C55E" : "#F5B301"}
+              color={user?.emailVerified ? "var(--profit)" : "var(--warning)"}
             />
-            <span style={{ color: user?.emailVerified ? "#22C55E" : "#F5B301", fontWeight: 600 }}>
+            <span style={{ color: user?.emailVerified ? "var(--profit)" : "var(--warning)", fontWeight: 600 }}>
               {user?.emailVerified ? "Email Verified" : "Email Pending Verification"}
             </span>
           </div>
@@ -186,7 +201,7 @@ export default function ProfileModal({
               style={{
                 background: "transparent",
                 border: "none",
-                color: "#E11D2E",
+                color: "var(--primary)",
                 fontWeight: 700,
                 fontSize: "12px",
                 cursor: "pointer"
@@ -198,21 +213,21 @@ export default function ProfileModal({
         </div>
 
         {verifyMsg && (
-          <div style={{ fontSize: "12px", color: "#22C55E", marginBottom: "10px" }}>
+          <div style={{ fontSize: "12px", color: "var(--profit)" }}>
             {verifyMsg}
           </div>
         )}
 
         {/* Avatar DP */}
-        <div style={{ display: "flex", alignItems: "center", gap: "14px", marginBottom: "16px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
           <div
             style={{
-              width: "68px",
-              height: "68px",
+              width: "64px",
+              height: "64px",
               borderRadius: "50%",
               overflow: "hidden",
-              border: "2px solid #E11D2E",
-              backgroundColor: "#141418",
+              border: "2px solid var(--primary)",
+              backgroundColor: "var(--surface-2)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -226,39 +241,22 @@ export default function ProfileModal({
                 style={{ width: "100%", height: "100%", objectFit: "cover" }}
               />
             ) : (
-              <User size={28} strokeWidth={1.75} color="#8B8B95" />
+              <User size={26} strokeWidth={1.75} color="var(--muted)" />
             )}
           </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-            <label
-              className="btn-surface"
-              style={{ cursor: "pointer", padding: "8px 12px", minHeight: "40px" }}
-            >
-              <Camera size={15} strokeWidth={1.75} color="#E11D2E" />
-              <span>{dpBase64 ? "Change DP" : "Upload DP"}</span>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleDpUpload}
-                style={{ display: "none" }}
-              />
-            </label>
-            {profile?.subscriptionStatus && profile.subscriptionStatus !== "None" && (
-              <span
-                style={{
-                  fontSize: "11px",
-                  color: "#22C55E",
-                  fontWeight: 700,
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "4px"
-                }}
-              >
-                <Shield size={12} strokeWidth={1.75} />
-                {profile.activePlanName}
-              </span>
-            )}
-          </div>
+          <label
+            className="btn-surface"
+            style={{ cursor: "pointer", padding: "8px 12px", minHeight: "40px" }}
+          >
+            <Camera size={15} strokeWidth={1.75} color="var(--primary)" />
+            <span>{dpBase64 ? "Change DP" : "Upload DP"}</span>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleDpUpload}
+              style={{ display: "none" }}
+            />
+          </label>
         </div>
 
         <form onSubmit={handleSave} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
@@ -315,12 +313,12 @@ export default function ProfileModal({
           </div>
 
           {error && (
-            <div style={{ fontSize: "12px", color: "#FF5C5C", lineHeight: 1.45 }}>
+            <div style={{ fontSize: "12px", color: "var(--loss)", lineHeight: 1.45 }}>
               <div>{error}</div>
               {errorCode && (
                 <div
                   className="font-mono-num"
-                  style={{ fontSize: "11px", color: "#8B8B95", marginTop: "3px" }}
+                  style={{ fontSize: "11px", color: "var(--muted)", marginTop: "3px" }}
                 >
                   Firebase error code: {errorCode}
                 </div>
@@ -340,8 +338,7 @@ export default function ProfileModal({
           onClick={onSignOut}
           style={{
             width: "100%",
-            marginTop: "12px",
-            color: "#FF5C5C",
+            color: "var(--loss)",
             borderColor: "rgba(255, 92, 92, 0.25)"
           }}
         >
@@ -358,6 +355,6 @@ const lbl = {
   fontSize: "10px",
   fontWeight: 700,
   letterSpacing: "0.8px",
-  color: "#8B8B95",
+  color: "var(--muted)",
   marginBottom: "6px"
 };

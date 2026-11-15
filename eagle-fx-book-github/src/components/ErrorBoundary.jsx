@@ -24,8 +24,8 @@ export default class ErrorBoundary extends React.Component {
         <div
           style={{
             minHeight: "100dvh",
-            backgroundColor: "#050505",
-            color: "#F5F5F7",
+            backgroundColor: "var(--bg)",
+            color: "var(--text)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -36,13 +36,13 @@ export default class ErrorBoundary extends React.Component {
             <AlertTriangle
               size={34}
               strokeWidth={1.75}
-              color="#E11D2E"
+              color="var(--primary)"
               style={{ marginBottom: "12px" }}
             />
             <h2 style={{ margin: "0 0 8px 0", fontSize: "18px" }}>
               Something went wrong
             </h2>
-            <p style={{ margin: "0 0 16px 0", fontSize: "13px", color: "#8B8B95" }}>
+            <p style={{ margin: "0 0 16px 0", fontSize: "13px", color: "var(--muted)" }}>
               {this.state.message}
             </p>
             <button

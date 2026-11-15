@@ -162,7 +162,7 @@ export default function TradeFormSheet({
         position: "fixed",
         inset: 0,
         zIndex: 920,
-        backgroundColor: "rgba(5, 5, 5, 0.82)",
+        backgroundColor: "var(--modal-backdrop)",
         backdropFilter: "blur(8px)",
         display: "flex",
         alignItems: "flex-end",
@@ -175,14 +175,14 @@ export default function TradeFormSheet({
         style={{ width: "100%", maxWidth: "430px", maxHeight: "92dvh", overflowY: "auto" }}
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
-          <h2 style={{ margin: 0, fontSize: "17px", fontWeight: 800, color: "#F5F5F7" }}>
+          <h2 style={{ margin: 0, fontSize: "17px", fontWeight: 800, color: "var(--text)" }}>
             {existingTrade ? "Edit Trade" : "Log New Execution"}
           </h2>
           <button
             type="button"
             onClick={onClose}
             className="touch-target"
-            style={{ background: "transparent", border: "none", color: "#8B8B95", cursor: "pointer" }}
+            style={{ background: "transparent", border: "none", color: "var(--muted)", cursor: "pointer" }}
           >
             <X size={20} strokeWidth={1.75} />
           </button>
@@ -225,8 +225,8 @@ export default function TradeFormSheet({
                   marginTop: "8px",
                   padding: "10px",
                   borderRadius: "14px",
-                  backgroundColor: "#141418",
-                  border: "1px solid #23232A"
+                  backgroundColor: "var(--surface-2)",
+                  border: "1px solid var(--border)"
                 }}
               >
                 <input
@@ -251,9 +251,9 @@ export default function TradeFormSheet({
                         borderRadius: "8px",
                         fontSize: "12px",
                         fontWeight: 700,
-                        border: pair === p ? "1px solid #E11D2E" : "1px solid #23232A",
-                        backgroundColor: pair === p ? "rgba(225,29,46,0.16)" : "#0D0D10",
-                        color: "#F5F5F7",
+                        border: pair === p ? "1px solid var(--primary)" : "1px solid var(--border)",
+                        backgroundColor: pair === p ? "rgba(225,29,46,0.16)" : "var(--surface)",
+                        color: "var(--text)",
                         cursor: "pointer"
                       }}
                     >
@@ -269,7 +269,7 @@ export default function TradeFormSheet({
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
             {["Buy", "Sell"].map((opt) => {
               const active = side === opt;
-              const col = opt === "Buy" ? "#22C55E" : "#FF5C5C";
+              const col = opt === "Buy" ? "var(--profit)" : "var(--loss)";
               return (
                 <button
                   key={opt}
@@ -281,13 +281,13 @@ export default function TradeFormSheet({
                     fontWeight: 800,
                     fontSize: "14px",
                     cursor: "pointer",
-                    border: active ? `1.5px solid ${col}` : "1px solid #23232A",
+                    border: active ? `1.5px solid ${col}` : "1px solid var(--border)",
                     backgroundColor: active
                       ? opt === "Buy"
                         ? "rgba(34,197,94,0.14)"
                         : "rgba(255,92,92,0.14)"
-                      : "#141418",
-                    color: active ? col : "#8B8B95"
+                      : "var(--surface-2)",
+                    color: active ? col : "var(--muted)"
                   }}
                 >
                   {opt.toUpperCase()}
@@ -377,10 +377,10 @@ export default function TradeFormSheet({
               style={{
                 padding: "8px 12px",
                 borderRadius: "10px",
-                backgroundColor: "#141418",
-                border: "1px solid #23232A",
+                backgroundColor: "var(--surface-2)",
+                border: "1px solid var(--border)",
                 fontSize: "12px",
-                color: computedR >= 0 ? "#22C55E" : "#FF5C5C"
+                color: computedR >= 0 ? "var(--profit)" : "var(--loss)"
               }}
             >
               Auto R-Multiple: {computedR >= 0 ? "+" : ""}
@@ -405,9 +405,9 @@ export default function TradeFormSheet({
                       fontSize: "12px",
                       fontWeight: 600,
                       cursor: "pointer",
-                      border: active ? "1px solid #E11D2E" : "1px solid #23232A",
-                      backgroundColor: active ? "rgba(225, 29, 46, 0.16)" : "#141418",
-                      color: active ? "#FF2D3D" : "#8B8B95"
+                      border: active ? "1px solid var(--primary)" : "1px solid var(--border)",
+                      backgroundColor: active ? "rgba(225, 29, 46, 0.16)" : "var(--surface-2)",
+                      color: active ? "var(--primary-hover)" : "var(--muted)"
                     }}
                   >
                     {tag}
@@ -441,7 +441,7 @@ export default function TradeFormSheet({
                     maxHeight: "140px",
                     objectFit: "cover",
                     borderRadius: "12px",
-                    border: "1px solid #23232A"
+                    border: "1px solid var(--border)"
                   }}
                 />
                 <button
@@ -451,9 +451,9 @@ export default function TradeFormSheet({
                     position: "absolute",
                     top: "8px",
                     right: "8px",
-                    backgroundColor: "rgba(5,5,5,0.85)",
-                    border: "1px solid #23232A",
-                    color: "#FF5C5C",
+                    backgroundColor: "var(--surface)",
+                    border: "1px solid var(--border)",
+                    color: "var(--loss)",
                     borderRadius: "8px",
                     padding: "6px",
                     cursor: "pointer"
@@ -464,7 +464,7 @@ export default function TradeFormSheet({
               </div>
             ) : (
               <label className="btn-surface" style={{ width: "100%", cursor: "pointer" }}>
-                <ImagePlus size={16} strokeWidth={1.75} color="#E11D2E" />
+                <ImagePlus size={16} strokeWidth={1.75} color="var(--primary)" />
                 <span>Upload Chart Screenshot</span>
                 <input
                   type="file"
@@ -476,7 +476,7 @@ export default function TradeFormSheet({
             )}
           </div>
 
-          {error && <div style={{ fontSize: "12px", color: "#FF5C5C" }}>{error}</div>}
+          {error && <div style={{ fontSize: "12px", color: "var(--loss)" }}>{error}</div>}
 
           <button type="submit" disabled={saving} className="btn-red">
             {saving ? "Saving..." : existingTrade ? "Update Trade" : "Save Trade"}
@@ -492,6 +492,6 @@ const lbl = {
   fontSize: "10px",
   fontWeight: 700,
   letterSpacing: "0.8px",
-  color: "#8B8B95",
+  color: "var(--muted)",
   marginBottom: "6px"
 };
