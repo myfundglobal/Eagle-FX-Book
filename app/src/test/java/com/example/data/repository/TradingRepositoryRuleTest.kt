@@ -19,12 +19,17 @@ import java.util.UUID
 class TradingRepositoryRuleTest : FirestoreEmulatorTestBase() {
 
     @Test
-    fun userCanLogAndObservePrivateTrades_andOtherUserCannotReadThem() = runBlocking {
-        val aliceUid = signInTestUser(ALICE_EMAIL, markEmailVerified = true)
+    fun userWithoutPlanDeniedTrades_activePlanCanLogAndObserve_otherUserCannotRead() = runBlocking {
+        val freshEmail = "fresh.${UUID.randomUUID().toString().take(8)}@test.com"
+        val aliceUid = signInTestUser(freshEmail, markEmailVerified = true)
         val aliceRepo = TradingRepository(firestore, auth)
+        val ensureRes = withTimeout(DEFAULT_TIMEOUT_MS) {
+            aliceRepo.ensureUserProfile(aliceUid, "Alice Trader", freshEmail, true)
+        }
+        assertTrue(ensureRes.isSuccess)
 
         val trade = TradeEntry(
-            date = "2026-11-14",
+            date = "2026-11-15",
             monthKey = "2026-11",
             pair = "XAU/USD",
             side = TradeEntry.SIDE_BUY,
@@ -38,8 +43,62 @@ class TradingRepositoryRuleTest : FirestoreEmulatorTestBase() {
             pnl = 750.0,
             notes = "London killzone sweep"
         )
+
+        // Without an active plan, adding a trade must fail with PERMISSION_DENIED
+        val noPlanRes = withTimeout(DEFAULT_TIMEOUT_MS) { aliceRepo.addTrade(trade) }
+        assertTrue("Expected addTrade failure without plan", noPlanRes.isFailure)
+
+        // Admin approves a 30-day plan order -> activates Alice
+        signInTestUser(UserProfile.BOOTSTRAP_ADMIN_EMAIL.lowercase(), markEmailVerified = true)
+        val adminRepo = TradingRepository(firestore, auth)
+        val planId = "plan_t_${UUID.randomUUID().toString().take(6)}"
+        assertTrue(
+            withTimeout(DEFAULT_TIMEOUT_MS) {
+                adminRepo.saveSubscriptionPlan(
+                    SubscriptionPlan(
+                        id = planId,
+                        name = "Pro 30D",
+                        durationLabel = "30 Days",
+                        durationDays = 30,
+                        priceUsd = 29.0,
+                        priceInr = 2499.0
+                    )
+                )
+            }.isSuccess
+        )
+
+        signInTestUser(freshEmail, markEmailVerified = true)
+        val ordId = withTimeout(DEFAULT_TIMEOUT_MS) {
+            aliceRepo.submitOrder(
+                OrderRecord(
+                    userId = aliceUid,
+                    userEmail = freshEmail,
+                    userName = "Alice Trader",
+                    productId = planId,
+                    productName = "Pro 30D",
+                    itemType = OrderRecord.TYPE_PLAN,
+                    durationDays = 30,
+                    amountLabel = "$29",
+                    paymentMethod = OrderRecord.METHOD_UPI,
+                    transactionId = "UTR-${UUID.randomUUID().toString().take(8)}"
+                )
+            )
+        }.getOrThrow()
+        val submitted = withTimeout(FLOW_TIMEOUT_MS) {
+            aliceRepo.observeUserOrders(aliceUid).first { list -> list.any { it.id == ordId } }
+        }.first { it.id == ordId }
+
+        signInTestUser(UserProfile.BOOTSTRAP_ADMIN_EMAIL.lowercase(), markEmailVerified = true)
+        assertTrue(
+            withTimeout(DEFAULT_TIMEOUT_MS) {
+                adminRepo.approveOrder(submitted, "Activated")
+            }.isSuccess
+        )
+
+        // Now active subscriber Alice can log & observe private trades
+        signInTestUser(freshEmail, markEmailVerified = true)
         val addRes = withTimeout(DEFAULT_TIMEOUT_MS) { aliceRepo.addTrade(trade) }
-        assertTrue("Expected addTrade success: ${addRes.exceptionOrNull()}", addRes.isSuccess)
+        assertTrue("Expected addTrade success after plan activation: ${addRes.exceptionOrNull()}", addRes.isSuccess)
         val tradeId = addRes.getOrThrow()
 
         val aliceTrades = withTimeout(FLOW_TIMEOUT_MS) {
@@ -127,7 +186,7 @@ class TradingRepositoryRuleTest : FirestoreEmulatorTestBase() {
         val postRes = withTimeout(DEFAULT_TIMEOUT_MS) {
             adminRepo.createCommunityPost(
                 authorName = "Head Admin",
-                dateLabel = "Nov 14",
+                dateLabel = "Nov 15",
                 title = "Market Update $productId",
                 adminMessage = "Watching key liquidity high.",
                 pairTag = "XAU/USD",
@@ -138,16 +197,17 @@ class TradingRepositoryRuleTest : FirestoreEmulatorTestBase() {
         assertTrue("Expected post creation success: ${postRes.exceptionOrNull()}", postRes.isSuccess)
         val postId = postRes.getOrThrow()
 
-        // Sign in as regular trader Alice
-        val aliceUid = signInTestUser(ALICE_EMAIL, markEmailVerified = true)
+        // Sign in as regular trader with a fresh email so emulator state is isolated
+        val traderEmail = "trader.${UUID.randomUUID().toString().take(8)}@test.com"
+        val aliceUid = signInTestUser(traderEmail, markEmailVerified = true)
         val aliceRepo = TradingRepository(firestore, auth)
         val aliceProfileRes = withTimeout(DEFAULT_TIMEOUT_MS) {
-            aliceRepo.ensureUserProfile(aliceUid, "Alice Trader", ALICE_EMAIL, true)
+            aliceRepo.ensureUserProfile(aliceUid, "Alice Trader", traderEmail, true)
         }
         assertTrue(aliceProfileRes.isSuccess)
         assertEquals(UserProfile.ROLE_USER, aliceProfileRes.getOrThrow().role)
 
-        // Alice completes her profile with validated phone details
+        // Alice completes her profile with validated phone details even without a plan
         val updateProfileRes = withTimeout(DEFAULT_TIMEOUT_MS) {
             aliceRepo.updateUserProfileDetails("Alice", "Mercer", "+91", "9876543210", "")
         }
@@ -168,16 +228,16 @@ class TradingRepositoryRuleTest : FirestoreEmulatorTestBase() {
         }
         assertTrue(badPlanRes.isFailure)
 
-        // Alice can like the post atomically
-        val likeRes = withTimeout(DEFAULT_TIMEOUT_MS) { aliceRepo.togglePostLike(postId, currentlyLiked = false) }
-        assertTrue("Expected like toggle success: ${likeRes.exceptionOrNull()}", likeRes.isSuccess)
+        // Without an active plan, liking a community post must be rejected
+        val lockedLikeRes = withTimeout(DEFAULT_TIMEOUT_MS) { aliceRepo.togglePostLike(postId, currentlyLiked = false) }
+        assertTrue("Expected like toggle to fail without active plan", lockedLikeRes.isFailure)
 
         // Alice submits a Pending Plan order
         val planOrderRes = withTimeout(DEFAULT_TIMEOUT_MS) {
             aliceRepo.submitOrder(
                 OrderRecord(
                     userId = aliceUid,
-                    userEmail = ALICE_EMAIL,
+                    userEmail = traderEmail,
                     userName = "Alice Mercer",
                     productId = planId,
                     productName = "Eagle FX Book 30 Days",
@@ -206,16 +266,22 @@ class TradingRepositoryRuleTest : FirestoreEmulatorTestBase() {
         }
         assertTrue("Expected plan approve success: ${approvePlanRes.exceptionOrNull()}", approvePlanRes.isSuccess)
 
-        // Admin blocks Alice -> Alice's profile shows Blocked and writes fail
-        val aliceDoc = UserProfile(id = aliceUid, userId = aliceUid, email = ALICE_EMAIL)
+        // With active plan, Alice can now like the community post atomically
+        signInTestUser(traderEmail, markEmailVerified = true)
+        val likeRes = withTimeout(DEFAULT_TIMEOUT_MS) { aliceRepo.togglePostLike(postId, currentlyLiked = false) }
+        assertTrue("Expected like toggle success after plan activation: ${likeRes.exceptionOrNull()}", likeRes.isSuccess)
+
+        // Admin blocks Alice -> Alice's writes fail
+        signInTestUser(UserProfile.BOOTSTRAP_ADMIN_EMAIL.lowercase(), markEmailVerified = true)
+        val aliceDoc = UserProfile(id = aliceUid, userId = aliceUid, email = traderEmail)
         val blockRes = withTimeout(DEFAULT_TIMEOUT_MS) { adminRepo.toggleUserBlockedStatus(aliceDoc, blockUser = true) }
         assertTrue("Expected block success: ${blockRes.exceptionOrNull()}", blockRes.isSuccess)
 
-        signInTestUser(ALICE_EMAIL, markEmailVerified = true)
+        signInTestUser(traderEmail, markEmailVerified = true)
         val blockedTradeRes = withTimeout(DEFAULT_TIMEOUT_MS) {
             aliceRepo.addTrade(
                 TradeEntry(
-                    date = "2026-11-14",
+                    date = "2026-11-15",
                     monthKey = "2026-11",
                     pair = "EUR/USD",
                     side = TradeEntry.SIDE_BUY,

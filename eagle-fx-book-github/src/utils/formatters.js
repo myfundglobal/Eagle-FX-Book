@@ -227,14 +227,22 @@ export async function fetchLiveEconomicCalendar() {
     let rawArrays = [];
 
     if (CALENDAR_API_URL && CALENDAR_API_URL.trim().startsWith("http")) {
-      const payload = await fetchJsonWithTimeout(CALENDAR_API_URL.trim(), 9000);
-      const list = Array.isArray(payload)
-        ? payload
-        : Array.isArray(payload?.events)
-          ? payload.events
-          : [];
-      rawArrays = [list];
-    } else {
+      try {
+        const payload = await fetchJsonWithTimeout(CALENDAR_API_URL.trim(), 10000);
+        const list = Array.isArray(payload)
+          ? payload
+          : Array.isArray(payload?.events)
+            ? payload.events
+            : [];
+        if (list.length > 0) {
+          rawArrays = [list];
+        }
+      } catch {
+        // Fall through to direct feed fallback
+      }
+    }
+
+    if (rawArrays.length === 0) {
       const results = await Promise.allSettled(
         DEFAULT_APPS_SCRIPT_FALLBACK_URLS.map((u) => fetchJsonWithTimeout(u, 8000))
       );

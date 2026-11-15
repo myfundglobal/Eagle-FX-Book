@@ -38,10 +38,46 @@ service cloud.firestore {
               request.auth.token.email == 'Myfundglobal@gmail.com');
     }
 
+    function hasUserDoc() {
+      return isSignedIn() &&
+             exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    function userDoc() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
     function isNotBlocked() {
       return isAdmin() ||
-             !exists(/databases/$(database)/documents/users/$(request.auth.uid)) ||
-             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.accessStatus == 'Active';
+             !hasUserDoc() ||
+             userDoc().accessStatus == 'Active';
+    }
+
+    function isChatMuted() {
+      return !isAdmin() &&
+             hasUserDoc() &&
+             ('chatMuted' in userDoc()) &&
+             userDoc().chatMuted == true;
+    }
+
+    // Active if Admin, or subscriptionStatus is Lifetime,
+    // or subscriptionStatus is Active AND planExpiresAt is null (Lifetime) or in the future.
+    function hasActivePlan() {
+      return isAdmin() || (
+        hasUserDoc() &&
+        (!('accessStatus' in userDoc()) || userDoc().accessStatus == 'Active') &&
+        (
+          userDoc().subscriptionStatus == 'Lifetime' ||
+          (
+            userDoc().subscriptionStatus == 'Active' &&
+            (
+              (('planExpiresAt' in userDoc()) && (userDoc().planExpiresAt == null || (userDoc().planExpiresAt is timestamp && userDoc().planExpiresAt > request.time))) ||
+              (!('planExpiresAt' in userDoc()) && ('subscriptionExpiresAtMillis' in userDoc()) && userDoc().subscriptionExpiresAtMillis > 0 && userDoc().subscriptionExpiresAtMillis > request.time.toMillis()) ||
+              (!('planExpiresAt' in userDoc()) && !('subscriptionExpiresAtMillis' in userDoc()))
+            )
+          )
+        )
+      );
     }
 
     // --- VALIDATION HELPERS ---
@@ -196,6 +232,36 @@ service cloud.firestore {
              data.createdAt is timestamp && data.createdAt <= request.time;
     }
 
+    function isValidChatMessage(data) {
+      return data.keys().hasAll([
+               'senderUid', 'senderName', 'senderPhoto', 'senderIsAdmin', 'text', 'createdAt'
+             ]) &&
+             data.keys().hasOnly([
+               'senderUid', 'senderName', 'senderPhoto', 'senderIsAdmin', 'text', 'createdAt'
+             ]) &&
+             data.senderUid is string && data.senderUid == request.auth.uid &&
+             data.senderName is string && data.senderName.size() >= 1 && data.senderName.size() <= 80 &&
+             data.senderPhoto is string && data.senderPhoto.size() <= 350000 &&
+             data.senderIsAdmin is bool && (data.senderIsAdmin == false || isAdmin()) &&
+             data.text is string && data.text.size() >= 1 && data.text.size() <= 500 &&
+             data.createdAt is timestamp && data.createdAt == request.time;
+    }
+
+    function isValidChatReport(data) {
+      return data.keys().hasAll([
+               'messageId', 'reportedUid', 'reportedName', 'messageText', 'reporterUid', 'createdAt'
+             ]) &&
+             data.keys().hasOnly([
+               'messageId', 'reportedUid', 'reportedName', 'messageText', 'reporterUid', 'createdAt'
+             ]) &&
+             data.messageId is string && data.messageId.size() >= 1 && data.messageId.size() <= 128 &&
+             data.reportedUid is string && data.reportedUid.size() >= 1 && data.reportedUid.size() <= 128 &&
+             data.reportedName is string && data.reportedName.size() >= 1 && data.reportedName.size() <= 80 &&
+             data.messageText is string && data.messageText.size() >= 1 && data.messageText.size() <= 500 &&
+             data.reporterUid is string && data.reporterUid == request.auth.uid &&
+             data.createdAt is timestamp && data.createdAt == request.time;
+    }
+
     function isValidNewsEvent(data) {
       return data.keys().hasAll([
                'date', 'time', 'timestampMillis', 'currency', 'event',
@@ -215,6 +281,17 @@ service cloud.firestore {
              data.previous is string && data.previous.size() <= 32 &&
              (!('actual' in data) || (data.actual is string && data.actual.size() <= 40)) &&
              data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidNewsActualOverride(data) {
+      return data.keys().hasAll(['eventId', 'currency', 'event', 'actual', 'updatedBy', 'updatedAt']) &&
+             data.keys().hasOnly(['eventId', 'currency', 'event', 'actual', 'updatedBy', 'updatedAt']) &&
+             data.eventId is string && data.eventId.size() >= 1 && data.eventId.size() <= 128 &&
+             data.currency is string && data.currency.size() >= 2 && data.currency.size() <= 12 &&
+             data.event is string && data.event.size() >= 2 && data.event.size() <= 160 &&
+             data.actual is string && data.actual.size() <= 40 &&
+             data.updatedBy is string && data.updatedBy == request.auth.uid &&
              data.updatedAt is timestamp && data.updatedAt <= request.time;
     }
 
@@ -297,9 +374,19 @@ service cloud.firestore {
              data.updatedAt is timestamp && data.updatedAt <= request.time;
     }
 
+    function isValidChatPin(data) {
+      return data.keys().hasAll(['messageId', 'senderName', 'text', 'updatedBy', 'updatedAt']) &&
+             data.keys().hasOnly(['messageId', 'senderName', 'text', 'updatedBy', 'updatedAt']) &&
+             data.messageId is string && data.messageId.size() >= 1 && data.messageId.size() <= 128 &&
+             data.senderName is string && data.senderName.size() >= 1 && data.senderName.size() <= 80 &&
+             data.text is string && data.text.size() >= 1 && data.text.size() <= 500 &&
+             data.updatedBy is string && data.updatedBy == request.auth.uid &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
     // --- COLLECTION RULES ---
 
-    // 1. Users (PII Protected)
+    // 1. Users (PII Protected; owner can always read/create/update own profile even without a plan)
     match /users/{userId} {
       allow get: if isValidId(userId) && (isOwner(userId) || isAdmin());
       allow list: if isAdmin();
@@ -329,7 +416,7 @@ service cloud.firestore {
 
       allow delete: if false;
 
-      // 1a. User-Private Trade Journal
+      // 1a. User-Private Trade Journal (creating/updating requires active unexpired plan or Admin)
       match /trades/{tradeId} {
         allow get: if isValidId(userId) && isValidId(tradeId) && isOwner(userId);
         allow list: if isValidId(userId) && isOwner(userId);
@@ -337,17 +424,19 @@ service cloud.firestore {
         allow create: if isValidId(userId) && isValidId(tradeId) &&
                          isOwner(userId) &&
                          isNotBlocked() &&
+                         hasActivePlan() &&
                          isValidTrade(incoming()) &&
                          incoming().userId == request.auth.uid;
 
         allow update: if isValidId(userId) && isValidId(tradeId) &&
                          isOwner(userId) &&
                          isNotBlocked() &&
+                         hasActivePlan() &&
                          isValidTrade(incoming()) &&
                          incoming().userId == existing().userId &&
                          incoming().createdAt == existing().createdAt;
 
-        allow delete: if isValidId(userId) && isValidId(tradeId) && isOwner(userId) && isNotBlocked();
+        allow delete: if isValidId(userId) && isValidId(tradeId) && isOwner(userId) && isNotBlocked() && hasActivePlan();
       }
 
       // 1b. User's Unlocked Product Downloads (written ONLY by Admin on order approval)
@@ -364,7 +453,7 @@ service cloud.firestore {
       }
     }
 
-    // 2. Dynamic Subscription Plans (Managed strictly by Admin)
+    // 2. Dynamic Subscription Plans (Readable by any signed-in user; managed strictly by Admin)
     match /subscription_plans/{planId} {
       allow get: if isValidId(planId) && isSignedIn();
       allow list: if isSignedIn();
@@ -381,10 +470,10 @@ service cloud.firestore {
       allow delete: if isValidId(planId) && isAdmin();
     }
 
-    // 3. Private Community Feed (Admin posts; authenticated active users read & atomically like)
+    // 3. Subscribers-Only Community Feed (Admin posts; active subscribers read & atomically like)
     match /community_posts/{postId} {
-      allow get: if isValidId(postId) && isSignedIn();
-      allow list: if isSignedIn();
+      allow get: if isValidId(postId) && isSignedIn() && hasActivePlan();
+      allow list: if isSignedIn() && hasActivePlan();
 
       allow create: if isValidId(postId) &&
                        isAdmin() &&
@@ -395,6 +484,7 @@ service cloud.firestore {
       allow update: if isValidId(postId) &&
                        isSignedIn() &&
                        isNotBlocked() &&
+                       hasActivePlan() &&
                        isValidCommunityPost(incoming()) &&
                        incoming().authorId == existing().authorId &&
                        incoming().createdAt == existing().createdAt &&
@@ -421,38 +511,77 @@ service cloud.firestore {
       allow delete: if isValidId(postId) && isAdmin();
 
       match /likes/{userId} {
-        allow get: if isValidId(postId) && isValidId(userId) && isOwner(userId);
-        allow list: if isValidId(postId) && isSignedIn() && resource.data.userId == request.auth.uid;
+        allow get: if isValidId(postId) && isValidId(userId) && isOwner(userId) && hasActivePlan();
+        allow list: if isValidId(postId) && isSignedIn() && hasActivePlan() && resource.data.userId == request.auth.uid;
 
         allow create: if isValidId(postId) && isValidId(userId) &&
                          isOwner(userId) &&
                          isNotBlocked() &&
+                         hasActivePlan() &&
                          isValidPostLike(incoming(), userId) &&
                          exists(/databases/$(database)/documents/community_posts/$(postId));
 
-        allow delete: if isValidId(postId) && isValidId(userId) && isOwner(userId) && isNotBlocked();
+        allow delete: if isValidId(postId) && isValidId(userId) && isOwner(userId) && isNotBlocked() && hasActivePlan();
         allow update: if false;
       }
     }
 
-    // 4. Economic News Calendar
+    // 3a. Live Group Chat ("Eagle FX Book Traders") - Subscribers & Admin only
+    match /chat_messages/{messageId} {
+      allow get: if isValidId(messageId) && isSignedIn() && hasActivePlan();
+      allow list: if isSignedIn() && hasActivePlan();
+
+      allow create: if isValidId(messageId) &&
+                       isSignedIn() &&
+                       isNotBlocked() &&
+                       hasActivePlan() &&
+                       !isChatMuted() &&
+                       isValidChatMessage(incoming());
+
+      allow update: if false;
+
+      allow delete: if isValidId(messageId) &&
+                       isSignedIn() &&
+                       (
+                         isAdmin() ||
+                         (isNotBlocked() && hasActivePlan() && existing().senderUid == request.auth.uid)
+                       );
+    }
+
+    // 3b. Moderation Reports (Subscribers create; Admin-only read/delete)
+    match /reports/{reportId} {
+      allow get, list: if isAdmin();
+
+      allow create: if isValidId(reportId) &&
+                       isSignedIn() &&
+                       isNotBlocked() &&
+                       hasActivePlan() &&
+                       isValidChatReport(incoming());
+
+      allow update: if false;
+      allow delete: if isValidId(reportId) && isAdmin();
+    }
+
+    // 4. Economic News Calendar & Admin Actual Overrides
     match /news_calendar/{newsId} {
-      allow get: if isValidId(newsId) && isSignedIn();
-      allow list: if isSignedIn();
+      allow get: if isValidId(newsId) && isSignedIn() && hasActivePlan();
+      allow list: if isSignedIn() && hasActivePlan();
 
       allow create: if isValidId(newsId) &&
                        isAdmin() &&
-                       isValidNewsEvent(incoming());
+                       (isValidNewsEvent(incoming()) || isValidNewsActualOverride(incoming()));
 
       allow update: if isValidId(newsId) &&
                        isAdmin() &&
-                       isValidNewsEvent(incoming()) &&
-                       incoming().createdAt == existing().createdAt;
+                       (
+                         (isValidNewsEvent(incoming()) && incoming().createdAt == existing().createdAt) ||
+                         isValidNewsActualOverride(incoming())
+                       );
 
       allow delete: if isValidId(newsId) && isAdmin();
     }
 
-    // 5. Store Products (Public Catalog)
+    // 5. Store Products (Catalog readable by signed-in users for purchase)
     match /products/{productId} {
       allow get: if isValidId(productId) && isSignedIn();
       allow list: if isSignedIn();
@@ -481,7 +610,7 @@ service cloud.firestore {
       allow delete: if isValidId(productId) && isAdmin();
     }
 
-    // 6. Orders (User-isolated payment proofs; Admin approves/rejects)
+    // 6. Orders (User-isolated payment proofs; allowed without plan so users can subscribe)
     match /orders/{orderId} {
       allow get: if isValidId(orderId) &&
                     isSignedIn() &&
@@ -513,16 +642,21 @@ service cloud.firestore {
       allow delete: if isValidId(orderId) && isAdmin();
     }
 
-    // 7. Admin Settings (Live UPI ID, UPI QR, Crypto Wallet)
+    // 7. Admin Settings (payment_config for Checkout, chat_pin for Live Chat)
     match /admin_settings/{settingId} {
-      allow get: if isValidId(settingId) && isSignedIn();
+      allow get: if isValidId(settingId) &&
+                    isSignedIn() &&
+                    (settingId != 'chat_pin' || hasActivePlan());
       allow list: if isSignedIn();
 
       allow create, update: if isValidId(settingId) &&
                                isAdmin() &&
-                               isValidAdminSettings(incoming());
+                               (
+                                 (settingId == 'chat_pin' && isValidChatPin(incoming())) ||
+                                 (settingId != 'chat_pin' && isValidAdminSettings(incoming()))
+                               );
 
-      allow delete: if false;
+      allow delete: if isValidId(settingId) && isAdmin() && settingId == 'chat_pin';
     }
   }
 }
